@@ -3,7 +3,7 @@ Code for SYSU submission to [ActivityNet Challenge 2020](http://activity-net.org
 then we propose a multi-event captioning model to capture the event-level temporal relationships and effectively fuse
 the multi-modal information. 
 
-We won the 2nd place and the technical paper is available at [here](https://arxiv.org/abs/2006.11693v1).
+We won the 2nd place and the technical paper is available at [arxiv](https://arxiv.org/abs/2006.11693v1).
 
 
 # Environment
@@ -27,7 +27,7 @@ cfg_file_path=cfgs/tsrm_cmg_hrnn.yml
 python train.py --cfg_path $cfg_file_path
 
 # Afterward, train the model with reinforcement learning on enlarged training set
-cfg_file_path=cfgs/tsrm_cmg_hrnn_RL.yml
+cfg_file_path=cfgs/tsrm_cmg_hrnn_RL_enlarged_trainset.yml
 python train.py --cfg_path $cfg_file_path
 ```
 training logs and generated captions are in this folder `./save`.
@@ -35,7 +35,7 @@ training logs and generated captions are in this folder `./save`.
 - Evaluation
 ```bash
 # evaluation with ground-truth proposals
-result_folder=tsrm_cmg_hrnn_RL
+result_folder=tsrm_cmg_hrnn_RL_enlarged_trainset
 gt_tap_json=data/captiondata/val_1_for_tap.json
 python eval_RL.py --eval_folder $result_folder --load_tap_json $gt_tap_json
 
@@ -46,13 +46,12 @@ python eval_RL.py --eval_folder $result_folder --load_tap_json $lnt_json_path
 
 - Testing
 ```bash
-python eval_RL.py --eval_folder tsrm_cmg_hrnn_RL \
+python eval_RL.py --eval_folder tsrm_cmg_hrnn_RL_enlarged_trainset \
  --load_tap_json data/generated_proposals/tsn_dbg_esgn_testset_num5044.json\
  --eval_caption_file data/captiondata/fake_test_anno.json
 ```
 
-- baseline models
-We also provide the config files of some baseline models. Please see this folder `./cfgs` for details. 
+We also provide the config files of some **baseline models**. Please see this folder `./cfgs` for details. 
 
 
 # Performance & Pretrained Models
