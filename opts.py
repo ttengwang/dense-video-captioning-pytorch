@@ -13,7 +13,7 @@ def parse_opts():
     parser.add_argument('--id', type=str, default='default', help='id of this run')
     parser.add_argument('--gpu_id', type=str, nargs='+', default=['0'])
     parser.add_argument('--disable_cudnn', type=int, default=1, help='disable cudnn may solve some unknown bugs')
-    parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--debug', action='store_true', help='using mini-dataset for fast debugging')
 
     #  ***************************** INPUT DATA PATH *****************************
     parser.add_argument('--train_caption_file', type=str,
@@ -117,13 +117,6 @@ def parse_opts():
         args.tap_epochs = 10
         args.train_caption_file = 'data/captiondata/train_modified_small.json'
         args.val_caption_file = 'data/captiondata/val_1_small.json'
-
-    if sys.platform[:3] == 'win':
-        args.nthreads = 0
-        args.id = args.id + '_WIN'
-
-    if sys.platform == 'darwin':
-        args.id = args.id + '_MAC'
 
     return args
 
