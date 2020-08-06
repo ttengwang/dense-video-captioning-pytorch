@@ -1,0 +1,28 @@
+id: 'tsrm_cmg_hrnn_RL_enlarged_trainset'
+
+event_encoder_type: tsrm
+caption_decoder_type: cmg_hrnn
+wordRNN_input_feats_type: C
+
+train_proposal_type: learnt_seq
+train_proposal_num: 24
+
+visual_feature_type: resnet_bn
+visual_feature_folder: 'data/resnet_bn'
+feature_dim: 3072
+feature_sample_rate: 2
+
+train_caption_file: 'data/captiondata/expand_trainset/train_modified.json'
+invalid_video_json: 'data/resnet_bn_invalid_videos.json'
+train_proposal_file: 'data/generated_proposals/dbg_trainval_top100.json'
+val_caption_file: 'data/captiondata/expand_trainset/val_1.json'
+
+pretrain: 1
+pretrain_path: save/tsrm_cmg_hrnn/model-best-CE.pth
+#pretrain_path: save/debug_2020-08-06_23-49-06/model-best-CE.pth
+self_critical_after: 0
+lr: 0.00003
+learning_rate_decay_start: 0
+learning_rate_decay_every: 4
+learning_rate_decay_rate: 0.8
+epoch: 40

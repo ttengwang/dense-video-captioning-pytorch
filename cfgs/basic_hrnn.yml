@@ -1,0 +1,14 @@
+id: 'basic_hrnn'
+
+event_encoder_type: basic
+caption_decoder_type: hrnn
+wordRNN_input_feats_type: C
+
+
+lr: 0.0001
+train_proposal_type: gt # gt or learnt
+
+visual_feature_type: resnet_bn
+visual_feature_folder: 'data/resnet_bn'
+feature_dim: 3072
+feature_sample_rate: 2
