@@ -10,7 +10,7 @@ import torch
 import time
 
 from eval_utils import evaluate
-from models.CaptionGenerator import CaptionGenerator
+from models.EncoderDecoder import EncoderDecoder
 from misc.utils import create_logger
 from dataset import PropSeqDataset, collate_fn
 from torch.utils.data import DataLoader
@@ -41,7 +41,7 @@ def main(opt):
                         shuffle=False, num_workers=opt.nthreads, collate_fn=collate_fn)
 
     opt.vocab_size = val_dataset.vocab_size
-    model = CaptionGenerator(opt)
+    model = EncoderDecoder(opt)
 
     if opt.eval_model_path:
         model_path = opt.eval_model_path

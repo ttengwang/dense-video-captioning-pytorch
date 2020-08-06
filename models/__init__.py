@@ -1,7 +1,7 @@
-from models.lm_models.ShowAttendTell import ShowAttendTellModel
-from models.lm_models.HRNN import ShowAttendTellModel as HRNN
-from models.lm_models.CMG_HRNN import ShowAttendTellModel as CMG_HRNN
-from models.event_encoder import Basic_Encoder, TSRM_Encoder
+from models.caption_decoder.ShowAttendTell import ShowAttendTellModel
+from models.caption_decoder.HRNN import ShowAttendTellModel as HRNN
+from models.caption_decoder.CMG_HRNN import ShowAttendTellModel as CMG_HRNN
+from models.EventEncoder import Basic_Encoder, TSRM_Encoder
 
 def setup_caption_model(opt):
     if opt.caption_decoder_type == 'show_attend_tell':

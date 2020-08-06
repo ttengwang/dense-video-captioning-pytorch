@@ -17,7 +17,7 @@ We won the 2nd place and the technical paper is available at [arxiv](https://arx
 - Download annotation files and pre-generated proposal files from [Google Drive](https://drive.google.com/drive/folders/1NSL7v7ax-9veJOcLxJpMzFyl5MTCUIUO?usp=sharing), and place them into `./data`.
 - Build vocabulary file. Run `python misc/build_vocab.py`.
 
-- (Optional) You can also test our code based on C3D feature. Download C3D feature files (`sub_activitynet_v1-3.c3d.hdf5`) from [here](http://activity-net.org/challenges/2016/download.html#c3d). Convert the h5 file into npy files and place them into `./data/c3d`.
+- (Optional) You can also test the code based on C3D feature. Download C3D feature files (`sub_activitynet_v1-3.c3d.hdf5`) from [here](http://activity-net.org/challenges/2016/download.html#c3d). Convert the h5 file into npy files and place them into `./data/c3d`.
 
 # Usage
 - Training

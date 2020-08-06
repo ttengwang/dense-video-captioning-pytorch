@@ -17,9 +17,9 @@ Meteor_scorer = None
 
 # Cider_scorer = None
 
-class CaptionGenerator(nn.Module):
+class EncoderDecoder(nn.Module):
     def __init__(self, opt):
-        super(CaptionGenerator, self).__init__()
+        super(EncoderDecoder, self).__init__()
         self.opt = opt
         if opt.feature_dim > 1024:
             self.frame_reduce_dim_layer = nn.Sequential(nn.Linear(opt.feature_dim, self.opt.hidden_dim),

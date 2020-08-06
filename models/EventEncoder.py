@@ -123,7 +123,6 @@ class TSRM_Encoder(Basic_Encoder):
 
         if self.use_posit_branch:
             pos_matrix = extract_position_matrix(np.array(timestamp_expand), event_num)
-            # TODO: replace pos_matrix to 0-1 mask
             pos_feats = extract_position_embedding(pos_matrix,
                                                    self.posit_hidden_dim)  # [event_num, event_num, self.posit_hidden_dim]
             pos_feats = feats.new_tensor(pos_feats).reshape(-1, self.posit_hidden_dim)
@@ -153,27 +152,4 @@ class TSRM_Encoder(Basic_Encoder):
 
 
 if __name__ == '__main__':
-    import opts
-
-    # opt = opts.parse_opts()
-    # model = BAF_Encoder(opt)
-    # tap_feats = lda_feats = None
-    # c3d_feats = torch.randn(10, 50, 500)
-    # lm_gather_idx = torch.Tensor([[0, 1, 5, 7]] * 3).long()
-    # soi_select_list = torch.Tensor([[0, 10], [3, 20], [30, 31]]).long()
-    # out = model.get_event_context(tap_feats, c3d_feats, lda_feats, lm_gather_idx, soi_select_list)
-    # print(out)
-    # pdb.set_trace()
-
-    gcn = GCN(4,4,3,0.5, group=2)
-    gcn.gc1.weight[:] = torch.diag(torch.FloatTensor([0.4,0.2,0.1,0]))
-    gcn.gc1.bias[:] = 0
-    gcn.eval()
-
-    input = torch.ones((3, 4)) * torch.FloatTensor([[0],[1],[2]])
-    adj_mat = torch.ones(2,3,3)
-    adj_mat[0] = torch.diag(torch.FloatTensor([1,1,1]))
-    adj_mat[1] = torch.diag(torch.FloatTensor([0.1,0.1,0.1]))
-
-    out = gcn(input, adj_mat)
-    print(out, gcn.gc1.weight, adj_mat)
+    pass

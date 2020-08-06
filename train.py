@@ -18,7 +18,7 @@ from eval_utils import evaluate
 import opts
 import misc.utils as utils
 from tensorboardX import SummaryWriter
-from models.CaptionGenerator import CaptionGenerator, init_scorer
+from models.EncoderDecoder import EncoderDecoder, init_scorer
 from misc.utils import print_alert_message, build_floder, create_logger, backup_envir, print_opt, set_seed
 from dataset import PropSeqDataset, collate_fn
 
@@ -79,7 +79,7 @@ def train(opt):
     opt.vocab_size = train_loader.dataset.vocab_size
 
     # Build model
-    model = CaptionGenerator(opt)
+    model = EncoderDecoder(opt)
     model.train()
 
     # Recover the parameters
