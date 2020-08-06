@@ -71,7 +71,7 @@ def convert_gtjson_to_tapjson(gt_json, tap_json):
 
 def eval_meteor(dvc_filename):
     score = collections.defaultdict(lambda: -1)
-    dvc_score = eval_dvc.eval_score(dvc_filename, onlyMeteor=1, onlyRecallPrec=0, only=0, topN=1000)
+    dvc_score = eval_dvc.eval_score(dvc_filename, onlyMeteor=1, onlyRecallPrec=0, topN=1000)
     for key in dvc_score:
         score[key] = dvc_score[key]
     return score
