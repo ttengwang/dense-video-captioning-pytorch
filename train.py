@@ -187,7 +187,7 @@ def train(opt):
                 end = time.time()
                 losses = np.round(loss_sum / losses_log_every, 3)
                 logger.info(
-                    "ID {} iter {} (epoch {}, lr {}), avg_iter_lossk = {}, time/iter = {:.3f}, bad_vid = {:.3f}"
+                    "ID {} iter {} (epoch {}, lr {}), avg_iter_loss = {}, time/iter = {:.3f}, bad_vid = {:.3f}"
                         .format(opt.id, iteration, epoch, opt.current_lr, losses,
                                 (end - start) / losses_log_every, bad_video_num))
 

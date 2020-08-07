@@ -6,7 +6,7 @@ wordRNN_input_feats_type: C
 
 
 lr: 0.0001
-train_proposal_type: gt # gt or learnt
+train_proposal_type: gt # gt or learnt_seq
 
 visual_feature_type: resnet_bn
 visual_feature_folder: 'data/resnet_bn'

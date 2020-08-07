@@ -74,7 +74,7 @@ def main(opt):
 
     avg_eval_score = {key: np.array(value).mean() for key, value in caption_scores.items()}
     logger.info(
-        'Validation result of {} available videos: {}\n avg_score:\n{}\n\n'.format(len(loader.dataset), caption_scores, avg_eval_score))
+        '\nValidation result of {} available videos:\n {}\n avg_score:\n{}'.format(len(loader.dataset), caption_scores, avg_eval_score))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
