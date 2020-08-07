@@ -117,7 +117,7 @@ def train(opt):
     print_opt(opt, model, logger)
     print_alert_message('Strat training !', logger)
 
-    loss_sum = np.zeros(6)
+    loss_sum = np.zeros(3)
     bad_video_num = 0
     start = time.time()
 
@@ -187,15 +187,15 @@ def train(opt):
                 end = time.time()
                 losses = np.round(loss_sum / losses_log_every, 3)
                 logger.info(
-                    "ID {} iter {} (epoch {}, lr {}), avg_iter_lossk = {}, time/iter = {:.3f}, bad_vid = {:.3f}\n"
+                    "ID {} iter {} (epoch {}, lr {}), avg_iter_lossk = {}, time/iter = {:.3f}, bad_vid = {:.3f}"
                         .format(opt.id, iteration, epoch, opt.current_lr, losses,
                                 (end - start) / losses_log_every, bad_video_num))
 
                 tf_writer.add_scalar('lr', opt.current_lr, iteration)
                 tf_writer.add_scalar('ss_prob', model.caption_decoder.ss_prob, iteration)
-                tf_writer.add_scalar('train_caption_loss', losses[1].item(), iteration)
-                tf_writer.add_scalar('train_rl_sample_score', losses[2].item(), iteration)
-                tf_writer.add_scalar('train_rl_greedy_score', losses[3].item(), iteration)
+                tf_writer.add_scalar('train_caption_loss', losses[0].item(), iteration)
+                tf_writer.add_scalar('train_rl_sample_score', losses[1].item(), iteration)
+                tf_writer.add_scalar('train_rl_greedy_score', losses[2].item(), iteration)
 
                 loss_history[iteration] = losses.tolist()
                 lr_history[iteration] = opt.current_lr

@@ -64,8 +64,8 @@ def main(opt):
     if torch.cuda.is_available():
         model.cuda()
 
-    dvc_json_path = os.path.join(folder_path, '{}_epoch{}_num{}_eval{}_score{}_nms{}_top{}.json'.format(
-        time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) + str(opt.id), epoch, len(loader.dataset), opt.eval_type,
+    dvc_json_path = os.path.join(folder_path, '{}_epoch{}_num{}_score{}_nms{}_top{}.json'.format(
+        time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) + str(opt.id), epoch, len(loader.dataset),
         opt.eval_score_threshold, opt.eval_nms_threshold, opt.eval_top_n))
 
     caption_scores = evaluate(model, loader, dvc_json_path, opt.load_tap_json,

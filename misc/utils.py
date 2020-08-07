@@ -43,7 +43,7 @@ def worker_init_fn(worker_id):
 def update_values(dict_from, dict_to):
     for key, value in dict_from.items():
         if key not in dict_to.keys():
-            assert AssertionError('key mismatching')
+            raise AssertionError('key mismatching')
         if isinstance(value, dict):
             update_values(dict_from[key], dict_to[key])
         elif value is not None:
@@ -72,7 +72,6 @@ def add_picks_histgram(picks, pvideo_len, video_len, tf_writer, iteration):
         tf_writer.add_histogram(name, d, iteration)
 
 
-
 def print_opt(opt, model, logger):
     print_alert_message('All args:', logger)
     for key, item in opt._get_kwargs():
@@ -91,13 +90,13 @@ def build_floder(opt):
             os.mkdir(opt.save_dir)
         save_folder = os.path.join(opt.save_dir, opt.id)
         if os.path.exists(save_folder):
-            wait_flag = input('Warning! Folder {} exists, rename it? (Y/N) : '.format(save_folder))
+            wait_flag = input('Warning! ID {} already exists, rename it? (Y/N) : '.format(opt.id))
             if wait_flag in ['Y', 'y']:
                 opt.id = opt.id + '_v_{}'.format(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
                 save_folder = os.path.join(opt.save_dir, opt.id)
-                print('Rename opt.id to "{}".'.format(opt.id))
+                print('Rename opt.id as "{}".'.format(opt.id))
             else:
-                assert False, 'Parameter id error, folder {} exists'.format(save_folder)
+                raise AssertionError('ID already exists, folder {} exists'.format(save_folder))
         print('Results folder "{}" does not exist, creating folder...'.format(save_folder))
         os.mkdir(save_folder)
         os.mkdir(os.path.join(save_folder, 'prediction'))
@@ -147,9 +146,10 @@ def create_logger(folder, filename):
 def print_alert_message(str, logger=None):
     msg = '*' * 20 + ' ' + str + ' ' + '*' * (58 - len(str))
     if logger:
-        logger.info('\n\n'+msg)
+        logger.info('\n\n' + msg)
     else:
         print(msg)
+
 
 def to_contiguous(tensor):
     if tensor.is_contiguous():
