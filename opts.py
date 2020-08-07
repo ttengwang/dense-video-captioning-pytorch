@@ -45,7 +45,7 @@ def parse_opts():
     parser.add_argument('--use_posit_branch', type=int, default=1, help='')
 
     #  ***************************** CAPTION DECODER  *****************************
-    parser.add_argument('--workRNN_input_feats_type', type=str, default='C', choices=['C', 'E', 'C+E'],
+    parser.add_argument('--wordRNN_input_feats_type', type=str, default='C', choices=['C', 'E', 'C+E'],
                         help='C:clip-level features, E: event-level features, C+E: both')
     parser.add_argument('--caption_decoder_type', type=str, default="show_attend_tell",
                         choices=['show_attend_tell', 'hrnn', 'cmg_hrnn'])

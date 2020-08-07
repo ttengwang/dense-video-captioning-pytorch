@@ -11,6 +11,4 @@ visual_feature_type: resnet_bn
 visual_feature_folder: 'data/resnet_bn'
 feature_dim: 3072
 feature_sample_rate: 2
-epcoh: 15
-
-
+epoch: 15

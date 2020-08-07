@@ -7,10 +7,9 @@ We won the 2nd place and the technical paper is available at [arxiv](https://arx
 
 
 # Environment
-1. python 3.6.2
-2. cuda 10.0, other versions may work
-3. [pytorch 1.2.0](https://pytorch.org/get-started/locally/), other versions may work
-4. other modules, run `pip install -r requirement.txt`
+1. Python 3.6.2
+2. CUDA 10.0, [PyTorch 1.2.0](https://pytorch.org/get-started/locally/) (may work on other versions but has not been tested)
+3. other modules, run `pip install -r requirement.txt`
 
 # Prerequisites
 - ActivityNet video features. We use TSN features following this [repo](https://github.com/salesforce/densecap). You can follow the "Data Preparation" section to download feature files, then decompress and move them into `./data/resnet_bn`.

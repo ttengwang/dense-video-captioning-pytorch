@@ -22,7 +22,7 @@ def set_seed(seed):
 def update_values(dict_from, dict_to):
     for key, value in dict_from.items():
         if key not in dict_to.keys():
-            raise AssertionError('key mismatching')
+            raise AssertionError('key mismatching: {}'.format(key))
         if isinstance(value, dict):
             update_values(dict_from[key], dict_to[key])
         elif value is not None:

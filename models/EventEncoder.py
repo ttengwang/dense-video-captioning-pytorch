@@ -139,7 +139,7 @@ class TSRM_Encoder(Basic_Encoder):
         event_ctx = torch.cat((F.relu(event_ctx), event_feats_expand), 1)
         event_ctx = self.drop(event_ctx)
 
-        # get position label
+        # positional feature vector for each event
         pos_feats = feats.new(len(timestamp_expand), 100).zero_()
         for i in range(len(timestamp_expand)):
             s, e = timestamp_expand[i]
