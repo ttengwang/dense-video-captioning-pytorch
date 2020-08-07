@@ -29,7 +29,7 @@ class EncoderDecoder(nn.Module):
 
         self.event_encoder_type = opt.event_encoder_type
         self.event_encoder = models.setup_event_encoder(opt)
-        self.caption_decoder = models.setup_caption_model(opt)
+        self.caption_decoder = models.setup_caption_decoder(opt)
 
     def forward(self, dt, mode, loader=None):
 

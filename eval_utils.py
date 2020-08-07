@@ -3,15 +3,10 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
-import copy
-import os
-import pdb
 from itertools import chain
 import torch
 import numpy as np
 import json
-import sys
-import misc.utils as utils
 from collections import OrderedDict
 from tqdm import tqdm
 from densevid_eval3 import evaluate3 as eval_dvc

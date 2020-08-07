@@ -3,28 +3,14 @@
 from __future__ import division
 from __future__ import print_function
 
-import collections
 import time
-
 import numpy as np
-import pdb
-
-import pandas as pd
 import torch
-import torch.nn as nn
-from torch.autograd import Variable
-
 import glob
 import shutil
 import os
-import collections
 import colorlog
-
 import random
-
-GLOBAL_SEED = 1
-GLOBAL_WORKER_ID = None
-
 
 def set_seed(seed):
     random.seed(seed)
@@ -32,13 +18,6 @@ def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-
-
-def worker_init_fn(worker_id):
-    global GLOBAL_WORKER_ID
-    GLOBAL_WORKER_ID = worker_id
-    set_seed(GLOBAL_SEED + worker_id)
-
 
 def update_values(dict_from, dict_to):
     for key, value in dict_from.items():
@@ -48,28 +27,6 @@ def update_values(dict_from, dict_to):
             update_values(dict_from[key], dict_to[key])
         elif value is not None:
             dict_to[key] = dict_from[key]
-
-
-def add_picks_histgram(picks, pvideo_len, video_len, tf_writer, iteration):
-    pvideo_mask = pvideo_len.new_zeros(len(pvideo_len), pvideo_len.max())
-    for i, l in enumerate(pvideo_len):
-        pvideo_mask[i, :l] = 1
-    h_picks = picks.masked_select(pvideo_mask.byte()).cpu().numpy()
-    h_interval = (picks[:, 1:] - picks[:, :-1]).masked_select(pvideo_mask[:, 1:].byte()).cpu().numpy()
-    h_number = pvideo_len.cpu().numpy()
-
-    video_len, _ = video_len.float().chunk(2, dim=1)
-    picks = picks.float()
-
-    h_picks_ratio = (picks / video_len).masked_select(pvideo_mask.byte()).cpu().numpy()
-    h_interval_max_ratio = ((picks[:, 1:] - picks[:, :-1]) / video_len).masked_select(
-        pvideo_mask[:, 1:].byte()).cpu().numpy()
-    h_number_ratio = (pvideo_len.float() / video_len.squeeze(1)).cpu().numpy()
-    names = ["picks_position", "picks_interval", "pick_num", "picks_posit_relative", "picks_interval_relative",
-             "pick_num_ratio"]
-    data = [h_picks, h_interval, h_number, h_picks_ratio, h_interval_max_ratio, h_number_ratio]
-    for name, d in zip(*(names, data)):
-        tf_writer.add_histogram(name, d, iteration)
 
 
 def print_opt(opt, model, logger):
@@ -151,13 +108,6 @@ def print_alert_message(str, logger=None):
         print(msg)
 
 
-def to_contiguous(tensor):
-    if tensor.is_contiguous():
-        return tensor
-    else:
-        return tensor.contiguous()
-
-
 def set_lr(optimizer, lr):
     for group in optimizer.param_groups:
         group['lr'] = lr
@@ -168,17 +118,6 @@ def clip_gradient(optimizer, grad_clip):
         for i, param in enumerate(group['params']):
             if param.grad is not None:
                 param.grad.data.clamp_(-grad_clip, grad_clip)
-
-
-def fix_model_parameters(model):
-    for para in model.parameters():
-        para.requires_grad = False
-
-
-def unfix_model_parameters(model):
-    for para in model.parameters():
-        para.requires_grad = True
-
 
 if __name__ == '__main__':
     # import opts

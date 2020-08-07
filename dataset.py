@@ -1,15 +1,11 @@
-import pdb
-import time
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 from itertools import chain
 import json
 
 import os
-import h5py
 import torch
 import numpy as np
 import random
-# from global_config import *
 from torch.utils.data import Dataset, DataLoader
 
 C3D_MEAN = -0.001915027447565527
@@ -89,21 +85,21 @@ def collate_fn(batch):
         "lnt":
             {
                 "featstamps": timestamps,  # list,        (lnt_all_event_num, 2)
-                "timestamp": list(raw_timestamp),  # list,        (video_num, ~lnt_event_num, 2)
-                "gather_idx": proposal_gather_idx,  # tensor,      (lnt_all_event_num)
+                "timestamp": list(raw_timestamp),  # list (len: video_num) of tensors (shape: (~lnt_event_num, 2))
+                "gather_idx": proposal_gather_idx,  # tensor, (lnt_all_event_num)
                 "gt_idx": gt_idx_tensor,  # tensor,      (lnt_all_event_num, 3)
 
-                # only available for video_num = 1
+                # only available when video_num = 1
                 "event_seq_idx": event_seq_idx,
-                # l(0)/t(1,2), (video_num, ~eseq_num, ~event_num), eseq_num = 1 means we do not use event sequence
+                # list (len: video_num) of tensors (shape: (eseq_num, eseq_len)), eseq_len = 1 means we do not use event sequence
                 "seq_gt_idx": seq_gt_idx,
-                # l(0)/t(1,2), (video_num, ~eseq_num, ~event_num), eseq_num = 1 means we do not use event sequence
+                # list (len: video_num) of tensors(shape: (eseq_num, eseq_len)), eseq_len = 1 means we do not use event sequence
             },
 
         "gt":
             {
                 "featstamps": gt_timestamps,  # list,        (gt_all_event_num, 2)
-                "timestamp": list(gt_raw_timestamp),  # list,        (video_num, ~gt_event_num, 2)
+                "timestamp": list(gt_raw_timestamp),  # list (len: video_num) of tensors (shape: (gt_event_num, 2))
                 "gather_idx": caption_gather_idx,  # tensor,      (gt_all_event_num)
             },
 

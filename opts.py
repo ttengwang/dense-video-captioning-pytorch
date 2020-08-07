@@ -2,7 +2,6 @@ import argparse
 import time
 import yaml
 from misc import utils
-import sys
 
 
 def parse_opts():
@@ -106,8 +105,6 @@ def parse_opts():
         utils.update_values(options_yaml, vars(args))
 
     args.raw_feature_dim = args.feature_dim
-
-    # args.id = time.strftime("%Y-%m-%d_", time.localtime()) + str(args.id)
 
     if args.debug:
         args.id = 'debug_' + time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
