@@ -37,16 +37,16 @@ training logs and generated captions are in this folder `./save`.
 # evaluation with ground-truth proposals
 result_folder=tsrm_cmg_hrnn_RL_enlarged_trainset
 gt_tap_json=data/captiondata/val_1_for_tap.json
-python eval_RL.py --eval_folder $result_folder --load_tap_json $gt_tap_json
+python eval.py --eval_folder $result_folder --load_tap_json $gt_tap_json
 
 # evaluation with learnt proposals
 lnt_tap_json=data/generated_proposals/tsn_dbg_esgn_valset_num4717.json
-python eval_RL.py --eval_folder $result_folder --load_tap_json $lnt_json_path
+python eval.py --eval_folder $result_folder --load_tap_json $lnt_json_path
 ```
 
 - Testing
 ```bash
-python eval_RL.py --eval_folder tsrm_cmg_hrnn_RL_enlarged_trainset \
+python eval.py --eval_folder tsrm_cmg_hrnn_RL_enlarged_trainset \
  --load_tap_json data/generated_proposals/tsn_dbg_esgn_testset_num5044.json\
  --eval_caption_file data/captiondata/fake_test_anno.json
 ```

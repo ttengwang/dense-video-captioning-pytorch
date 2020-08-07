@@ -126,7 +126,7 @@ class TSRM_Encoder(Basic_Encoder):
             pos_feats = extract_position_embedding(pos_matrix,
                                                    self.posit_hidden_dim)  # [event_num, event_num, self.posit_hidden_dim]
             pos_feats = feats.new_tensor(pos_feats).reshape(-1, self.posit_hidden_dim)
-            pos_sim = self.pair_pos_fc2(F.tanh(self.pair_pos_fc1(pos_feats))).reshape(event_num, event_num, self.group)
+            pos_sim = self.pair_pos_fc2(torch.tanh(self.pair_pos_fc1(pos_feats))).reshape(event_num, event_num, self.group)
             pos_sim = pos_sim.permute(2, 0, 1)
             sim = cos_sim + pos_sim
 
