@@ -5,7 +5,7 @@ caption_decoder_type: cmg_hrnn
 wordRNN_input_feats_type: C
 
 train_proposal_type: learnt_seq
-train_proposal_num: 24
+train_proposal_sample_num: 24
 
 visual_feature_type: resnet_bn
 visual_feature_folder: 'data/resnet_bn'

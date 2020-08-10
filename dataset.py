@@ -136,7 +136,7 @@ class EDVCdataset(Dataset):
         self.keys = self.anno.keys()
         if opt.invalid_video_json:
             invalid_videos = json.load(open(opt.invalid_video_json))
-            self.keys = list(set(self.keys) - set(invalid_videos))
+            self.keys = [k for k in self.keys if k[:13] not in invalid_videos]
         logger.info('load captioning file, %d captioning loaded', len(self.keys))
 
         self.feature_folder = feature_folder
@@ -157,11 +157,7 @@ class EDVCdataset(Dataset):
                 tmp = sorted(v_data, key=lambda x: x['segment'])
                 self.train_proposal_file[vid] = tmp
             tp_keys = set(self.train_proposal_file.keys())
-            new_key = []
-            for key in self.keys:
-                if key[2:13] in tp_keys:
-                    new_key.append(key)
-            self.keys = new_key
+            self.keys = [k for k in self.keys if k[2:13] in tp_keys]
 
     def __len__(self):
         return len(self.keys)
@@ -330,3 +326,22 @@ def iou(interval_1, interval_2):
     union = np.minimum(np.maximum(end, end_i) - np.minimum(start, start_i), end - start + end_i - start_i)
     iou = intersection / (union + 1e-8)
     return iou
+
+
+if __name__=="__main__":
+    import opts
+    from tqdm import tqdm
+    from misc.utils import build_floder, create_logger
+
+    opt = opts.parse_opts()
+    save_folder = build_floder(opt)
+    logger = create_logger(save_folder, 'train.log')
+    train_dataset = PropSeqDataset(opt.train_caption_file,
+                                   opt.visual_feature_folder,
+                                   opt.dict_file, True, opt.train_proposal_type,
+                                   logger, opt)
+    train_loader = DataLoader(train_dataset, batch_size=opt.batch_size,
+                              shuffle=True, num_workers=opt.nthreads, collate_fn=collate_fn)
+    for dt in tqdm(train_loader):
+        pass
+    print('end')

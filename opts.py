@@ -11,6 +11,7 @@ def parse_opts():
     parser.add_argument('--cfg_path', type=str, default='cfgs/basic_rnn.yml', help='')
     parser.add_argument('--id', type=str, default='default', help='id of this run')
     parser.add_argument('--gpu_id', type=str, nargs='+', default=['0'])
+    parser.add_argument('--seed', type=int, default=777)
     parser.add_argument('--disable_cudnn', type=int, default=1, help='disable cudnn may solve some unknown bugs')
     parser.add_argument('--debug', action='store_true', help='using mini-dataset for fast debugging')
 

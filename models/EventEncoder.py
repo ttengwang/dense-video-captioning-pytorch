@@ -135,7 +135,7 @@ class TSRM_Encoder(Basic_Encoder):
 
         value = self.value_map(event_feats_expand).reshape(event_num, self.group, -1).transpose(0, 1)
         event_ctx = torch.bmm(sim, value)
-        event_ctx = event_ctx.reshape(event_num, -1)
+        event_ctx = event_ctx.transpose(0, 1).reshape(event_num, -1)
         event_ctx = torch.cat((F.relu(event_ctx), event_feats_expand), 1)
         event_ctx = self.drop(event_ctx)
 

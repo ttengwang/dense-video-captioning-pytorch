@@ -24,7 +24,7 @@ from dataset import PropSeqDataset, collate_fn
 
 
 def train(opt):
-    set_seed(777)
+    set_seed(opt.seed)
     save_folder = build_floder(opt)
     logger = create_logger(save_folder, 'train.log')
     tf_writer = SummaryWriter(os.path.join(save_folder, 'tf_summary'))

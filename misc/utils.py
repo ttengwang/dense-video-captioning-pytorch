@@ -28,7 +28,6 @@ def update_values(dict_from, dict_to):
         elif value is not None:
             dict_to[key] = dict_from[key]
 
-
 def print_opt(opt, model, logger):
     print_alert_message('All args:', logger)
     for key, item in opt._get_kwargs():
@@ -127,5 +126,5 @@ if __name__ == '__main__':
     # record_this_run_to_csv(info, 'save/results_all_runs.csv')
 
     logger = create_logger('./', 'mylogger.log')
-    logger.info('test')
+    logger.info('debug')
     logger.info('test2')
