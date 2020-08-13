@@ -36,7 +36,8 @@ def parse_opts():
     parser.add_argument('--nthreads', type=int, default=4)
     parser.add_argument('--feature_sample_rate', type=int, default=1)
     parser.add_argument('--train_proposal_sample_num', type=int,
-                        default=24, help='only work when train_proposal_type = learnt/learnt_seq')
+                        default=24,
+                        help='number of sampled proposals (or proposal sequence), a bigger value may be better')
     parser.add_argument('--train_proposal_type', type=str, default='', help='gt, learnt_seq, learnt')
 
     # ***************************** Event ENCODER  *****************************

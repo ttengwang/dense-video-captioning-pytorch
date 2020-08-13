@@ -17,7 +17,6 @@ from torch.utils.data import DataLoader
 
 
 def main(opt):
-
     folder_path = os.path.join(opt.eval_save_dir, opt.eval_folder)
     infos_path = os.path.join(folder_path, 'info.json')
     logger = create_logger(folder_path, 'val.log')
@@ -69,17 +68,26 @@ def main(opt):
         opt.eval_score_threshold, opt.eval_nms_threshold, opt.eval_top_n))
 
     caption_scores = evaluate(model, loader, dvc_json_path, opt.load_tap_json,
-                                    opt.eval_score_threshold, opt.eval_nms_threshold,
-                                    opt.eval_top_n, logger)
+                              opt.eval_score_threshold, opt.eval_nms_threshold,
+                              opt.eval_top_n, logger)
 
-    avg_eval_score = {key: np.array(value).mean() for key, value in caption_scores.items()}
+    avg_eval_score = {key: np.array(value).mean() for key, value in caption_scores.items() if key !='tiou'}
+    avg_eval_score2 = {key: np.array(value).mean() * 4917 / len(loader.dataset) for key, value in caption_scores.items() if key != 'tiou'}
+
     logger.info(
-        '\nValidation result of {} available videos:\n {}\n avg_score:\n{}'.format(len(loader.dataset), caption_scores, avg_eval_score))
+        '\nValidation result based on all 4917 val videos:\n {}\n avg_score:\n{}'.format(
+                                                                                   caption_scores.items(),
+                                                                                   avg_eval_score))
+
+    logger.info(
+            '\nValidation result based on {} available val videos:\n avg_score:\n{}'.format(len(loader.dataset),
+                                                                                       avg_eval_score2))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--eval_save_dir', type=str, default='save')
-    parser.add_argument('--eval_folder', type=str, default='default')
+    parser.add_argument('--eval_folder', type=str, default='run0')
     parser.add_argument('--eval_model_path', type=str, default='')
     parser.add_argument('--eval_score_threshold', type=float, default=0.)
     parser.add_argument('--eval_nms_threshold', type=float, default=1.01)

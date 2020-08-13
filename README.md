@@ -19,8 +19,9 @@ We won the 2nd place and the technical paper is available at [arxiv](https://arx
 - (Optional) You can also test the code based on C3D feature. Download C3D feature files (`sub_activitynet_v1-3.c3d.hdf5`) from [here](http://activity-net.org/challenges/2016/download.html#c3d). Convert the h5 file into npy files and place them into `./data/c3d`.
 
 # Usage
+
 - Training
-```bash
+```
 # first, train the model with cross-entropy loss 
 cfg_file_path=cfgs/tsrm_cmg_hrnn.yml
 python train.py --cfg_path $cfg_file_path
@@ -32,19 +33,29 @@ python train.py --cfg_path $cfg_file_path
 training logs and generated captions are in this folder `./save`.
 
 - Evaluation
-```bash
-# evaluation with ground-truth proposals
+```
+# evaluation with ground-truth proposals (small val set with 1000 videos)
 result_folder=tsrm_cmg_hrnn_RL_enlarged_trainset
-gt_tap_json=data/captiondata/val_1_for_tap.json
-python eval.py --eval_folder $result_folder --load_tap_json $gt_tap_json
+val_caption_file=data/captiondata/expand_trainset/val_1.json
+python eval.py --eval_folder $result_folder --eval_caption_file $val_caption_file
 
-# evaluation with learnt proposals
+# evaluation with learnt proposals (small val set with 1000 videos)
+result_folder=tsrm_cmg_hrnn_RL_enlarged_trainset
+lnt_tap_json=data/generated_proposals/tsn_dbg_esgn_valset_num4717.json
+python eval.py --eval_folder $result_folder --eval_caption_file $val_caption_file --load_tap_json $lnt_json_path
+
+# evaluation with ground-truth proposals (standard val set with 4917 videos)
+result_folder=tsrm_cmg_hrnn
+python eval.py --eval_folder $result_folder
+
+# evaluation with learnt proposals (standard val set with 4917 videos)
+result_folder=tsrm_cmg_hrnn
 lnt_tap_json=data/generated_proposals/tsn_dbg_esgn_valset_num4717.json
 python eval.py --eval_folder $result_folder --load_tap_json $lnt_json_path
 ```
 
 - Testing
-```bash
+```
 python eval.py --eval_folder tsrm_cmg_hrnn_RL_enlarged_trainset \
  --load_tap_json data/generated_proposals/tsn_dbg_esgn_testset_num5044.json\
  --eval_caption_file data/captiondata/fake_test_anno.json
@@ -53,9 +64,9 @@ python eval.py --eval_folder tsrm_cmg_hrnn_RL_enlarged_trainset \
 We also provide the config files of some **baseline models**. Please see this folder `./cfgs` for details. 
 
 
-# Performance & Pretrained Models
-coming soon
+# Pre-trained model
 
+We provide a pre-trained model from [here](https://drive.google.com/drive/folders/1EqQCzjfJSOyKVq_Rzoi0xAcHLJhVlVht?usp=sharing). You can directly download `model-best-RL.pth` and `info.json` and place them into `./save/tsrm_cmg_hrnn_RL_enlarged_trainset`, then run the above code for fast evaluation. On the [small validation set (1000 videos)](data/captiondata/expand_trainset/val_1.json), this model achieves a 14.51/10.14 METEOR with ground-truth/learnt proposals.
 
 # Citation
 If you find this repo helpful to your research, please consider citing:
