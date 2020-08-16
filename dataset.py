@@ -149,7 +149,7 @@ class EDVCdataset(Dataset):
 
         self.feature_dim = self.opt.feature_dim
 
-        if opt.train_proposal_file:
+        if self.is_training and opt.train_proposal_file:
             self.train_proposal_file = json.load(open(opt.train_proposal_file))['results']
             for vid in self.train_proposal_file.keys():
                 v_data = self.train_proposal_file[vid]
