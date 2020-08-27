@@ -3,7 +3,7 @@ Code for SYSU submission to [ActivityNet Challenge 2020](http://activity-net.org
 then we propose a multi-event captioning model to capture the event-level temporal relationships and effectively fuse
 the multi-modal information. 
 
-We won the 2nd place and the technical paper is available at [arxiv](https://arxiv.org/abs/2006.11693v1).
+We won the 2nd place and the technical paper is available at [arxiv](https://arxiv.org/abs/2006.11693v2).
 
 
 # Environment
