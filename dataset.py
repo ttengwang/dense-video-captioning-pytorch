@@ -311,7 +311,7 @@ class PropSeqDataset(EDVCdataset):
             event_seq_idx = seq_gt_idx = np.expand_dims(gt_idx, 0)
 
         else:
-            assert AssertionError('proposal type error')
+            raise AssertionError('proposal type error')
 
         return feats, lnt_featstamps, gt_featstamps, event_seq_idx, seq_gt_idx, gt_idx, caption_label, \
                lnt_timestamps, gt_timestamps, duration, captions, key

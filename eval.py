@@ -50,7 +50,7 @@ def main(opt):
             model_path = os.path.join(folder_path, 'model-best-RL.pth')
 
     while not os.path.exists(model_path):
-        assert AssertionError('File {} does not exist'.format(model_path))
+        raise AssertionError('File {} does not exist'.format(model_path))
 
     logger.debug('Loading model from {}'.format(model_path))
 
