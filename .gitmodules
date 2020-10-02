@@ -1,3 +1,0 @@
-[submodule "densevid_eval3/coco-caption"]
-	path = densevid_eval3/coco-caption
-	url = https://github.com/ttengwang/coco-caption.git

@@ -1,0 +1,22 @@
+id: esgn_run0
+
+train_proposal_type: learnt
+train_proposal_sample_num: 100
+
+visual_feature_type: c3d
+visual_feature_folder: 'data/c3d'
+
+batch_size: 1
+event_encoder_type: basic
+lr: 0.00005
+
+train_proposal_file: data/generated_proposals/dbg_trainval_top100.json
+eval_proposal_file: data/generated_proposals/dbg_trainval_top100.json
+invalid_video_json: "data/DBG_invalid_videos.json"
+feature_dim: 500
+
+learning_rate_decay_start: 0
+scheduled_sampling_start: 0
+
+feature_sample_rate: 8
+weight_decay: 0.00001

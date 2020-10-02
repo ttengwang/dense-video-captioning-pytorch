@@ -3,17 +3,21 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import pdb
 from itertools import chain
 import torch
 import numpy as np
 import json
+import os
 from collections import OrderedDict
 from tqdm import tqdm
-from densevid_eval3 import evaluate3 as eval_dvc
+import densevid_eval3.evaluate3 as eval_dvc
+
 
 def calculate_avg_proposal_num(json_path):
     data = json.load(open(json_path))
     return np.array([len(v) for v in data['results'].values()]).mean()
+
 
 def convert_tapjson_to_dvcjson(tap_json, dvc_json):
     data = json.load(open(tap_json, 'r'))
@@ -41,11 +45,14 @@ def convert_dvcjson_to_tapjson(dvc_json, tap_json):
         video_info = []
         event_num = len(data[video_name])
         timestamps = [data[video_name][i]['timestamp'] for i in range(event_num)]
-        sentences = [data[video_name][i]['sentence'] for i in range(event_num)]
+        # sentences = [data[video_name][i]['sentence'] for i in range(event_num)]
         for i, timestamp in enumerate(timestamps):
-            video_info.append({'segment': timestamp, 'score': 1.})
+            # TODO same bug in DXCP
+            score = data[video_name][i].get('proposal_score', 1.0)
+            video_info.append({'segment': timestamp, 'score': score})
         out['results'][video_name[2:]] = video_info
     json.dump(out, open(tap_json, 'w'))
+
 
 def convert_gtjson_to_tapjson(gt_json, tap_json):
     data = json.load(open(gt_json, 'r'))
@@ -58,11 +65,22 @@ def convert_gtjson_to_tapjson(gt_json, tap_json):
     for video_name in all_names:
         video_info = []
         timestamps = data[video_name]['timestamps']
-        sentences = data[video_name]['sentences']
+        # sentences = data[video_name]['sentences']
         for i, timestamp in enumerate(timestamps):
             video_info.append({'segment': timestamp, 'score': 1.})
         out['results'][video_name[2:]] = video_info
     json.dump(out, open(tap_json, 'w'))
+
+
+def eval_mIOU_PR(tap_filename):
+    score = collections.defaultdict(lambda: -1)
+    if not os.path.exists(tap_filename + '.tmp'):
+        convert_tapjson_to_dvcjson(tap_filename, tap_filename + '.tmp')
+    dvc_score = eval_dvc.eval_score(tap_filename + '.tmp', onlyMeteor=0, onlyRecallPrec=1, topN=1000)
+    score['avg_precison'] = dvc_score['Precision']
+    score['avg_recall'] = dvc_score['Recall']
+    return score
+
 
 def eval_meteor(dvc_filename):
     score = collections.defaultdict(lambda: -1)
@@ -71,97 +89,80 @@ def eval_meteor(dvc_filename):
         score[key] = dvc_score[key]
     return score
 
-def evaluate(model, loader, dvc_json_path, tap_json_path, score_threshold=0.1, nms_threshold=0.8, top_n=100, logger=None):
+
+def esgn_reranking(esgn_score, prop_score, topN=10):
+    seq = []
+    prob = []
+
+    for vid in range(esgn_score.shape[0]):
+        sg_seq = []
+        sg_prob = []
+        for i in range(esgn_score.shape[1]):
+            if np.argmax(esgn_score[vid][i]) == 0:
+                break
+            # attention here: we can use the unbalanced weight for esgn_score and proposal_score
+            s = esgn_score[vid][i] + (prop_score) * 0.8
+            ids = np.argsort(-s)[:topN]
+            sg_seq.extend(ids.tolist())
+            sg_prob.extend(s[ids].tolist())
+        seq.append(sg_seq)
+        prob.append(sg_prob)
+    return seq, np.array(prob)
+
+
+def evaluate(model, loader, tap_json_path, score_threshold=0.1, nms_threshold=0.8, top_n=100, esgn_jointrank=False,
+             esgn_topN=1, logger=None):
     out_json = {'results': {},
                 'version': "VERSION 1.0",
-                'external_data': {'used:': True, 'details': "C3D pretrained on Sports-1M"}}
+                'external_data': {'used:': True, 'details': None}}
     opt = loader.dataset.opt
-
-    if tap_json_path:
-        with open(tap_json_path, 'r') as f:
-            tap_json = json.load(f)['results']
-            tap_keys = ['v_'+key for key in tap_json.keys()]
-            loader.dataset.keys = list(set(loader.dataset.keys) & set(tap_keys))
 
     with torch.set_grad_enabled(False):
         for dt in tqdm(loader):
-            valid_keys = ["video_tensor", "video_length", "video_mask", "video_key"]
+            valid_keys = ["video_tensor", "video_length", "video_mask", "video_key", "lnt_timestamp", "lnt_gt_idx",
+                          "lnt_featstamps", "lnt_prop_score"]
             dt = {key: value for key, value in dt.items() if key in valid_keys}
             if torch.cuda.is_available():
                 dt = {key: _.cuda() if isinstance(_, torch.Tensor) else _ for key, _ in dt.items()}
             dt = collections.defaultdict(lambda: None, dt)
 
-            if tap_json_path:
-                batch_json = OrderedDict([(video_name, tap_json[video_name[2:]]) for video_name in dt['video_key']])
-                # ranking events
-                for vid in batch_json.keys():
-                    v_data = batch_json[vid]
-                    tmp = sorted(v_data, key=lambda x: x['segment'])
-                    batch_json[vid] = tmp
+            if esgn_jointrank:
+                seq, sg_prob, weights = model(dt, mode='eval_jointrank')
+                if len(weights):
+                    seq, prob = esgn_reranking(weights.detach().cpu().numpy(),
+                                            dt['lnt_prop_score'].detach().cpu().numpy(), topN=esgn_topN)
             else:
-                raise ValueError('load_tap_json must have a value')
+                seq, prob = model(dt, mode='eval')
 
-            raw_timestamps = [[p['segment'] for p in info] for video_name, info in batch_json.items()]
-            caption_nums = [len(info) for video_name, info in batch_json.items()]
-            gather_idx = np.array(list(
-                chain(*[[(0, dt['video_key'].index(video_name), 0) for p in info] for i, (video_name, info) in
-                        enumerate(batch_json.items())])))
-            feat_len, raw_len = np.split(dt['video_length'].cpu().numpy()[gather_idx[:, 1]], 2, 1)
-            dt['lnt_featstamps'] = loader.dataset.process_time_step(raw_len, list(chain(*raw_timestamps)), feat_len)
-            dt['lnt_timestamp'] = raw_timestamps
+            if len(seq) == 0:
+                continue
 
-            if 'hrnn' in opt.caption_decoder_type:
-                assert opt.batch_size == 1
-                dt['lnt_event_seq_idx'] = [np.arange(caption_nums[i])[np.newaxis, :] for i in range(len(caption_nums))]
-                dt['lnt_gt_idx'] = gather_idx
-                FIRST_DIM = 0
-                seq, cap_prob = model.forward_hrnn(dt, mode='eval')
-                seq = seq[FIRST_DIM]
-                cap_prob = cap_prob[FIRST_DIM]
-            else:
-                dt['lnt_gt_idx'] = gather_idx
-                dt['lnt_event_seq_idx'] = [np.arange(caption_nums[i])[np.newaxis, :] for i in range(len(caption_nums))]
-                seq, cap_prob = model.forward_rnn(dt, mode='eval')
-
-            if len(seq):
-                mask = (seq > 0).float()
-                cap_score = (mask * cap_prob).sum(1).cpu().numpy().astype('float')
-                seq = seq.detach().cpu().numpy().astype('int')  # (eseq_batch_size, eseq_len, cap_len)
-                pred_caption = [loader.dataset.rtranslate(s) for s in seq]
-            else:
-                cap_score = [-1e5] * len(gather_idx)
-                pred_caption = [''] * len(gather_idx)
-
-            # construct tap+caption json
-            idx = 0
-            for video_name, info in batch_json.items():
-                for i, p in enumerate(info):
-                    p['timestamp'] = p.pop('segment')
-                    p['proposal_score'] = p.pop('score')
-                    p['proposal_id'] = [i, len(info)]
-                    p['sentence'] = pred_caption[idx]
-                    p['sentence_score'] = cap_score[idx]
-                    idx += 1
-            batch_json = nms(batch_json, score_threshold, nms_threshold, top_n)
+            batch_json = {}
+            for idx, video_name in enumerate(dt['video_key']):
+                batch_json[video_name[2:]] = [
+                    {
+                        "segment":
+                            dt['lnt_timestamp'][idx][seq[idx][pid]],
+                        "esgn_score":
+                            prob[idx][pid].item(),
+                        "score":
+                            dt['lnt_prop_score'][seq[idx][pid]].item()
+                    }
+                    for pid in range(len(seq[idx]))]
+            batch_json = tap_nms(batch_json, score_threshold, nms_threshold, top_n)
             out_json['results'].update(batch_json)
 
     out_json['valid_video_num'] = len(out_json['results'])
     out_json['avg_proposal_num'] = np.array([len(v) for v in out_json['results'].values()]).mean().item()
-    out_json['tap_json'] = tap_json_path
-
-    with open(dvc_json_path, 'w') as f:
+    with open(tap_json_path, 'w') as f:
         json.dump(out_json, f)
 
-    caption_scores = eval_meteor(dvc_json_path)
-    out_json.update(caption_scores)
-    with open(dvc_json_path, 'w') as f:
-        logger.info('\nsaving json file to {}'.format(dvc_json_path))
+    scores = eval_mIOU_PR(tap_json_path)
+    out_json.update(scores)
+
+    with open(tap_json_path, 'w') as f:
         json.dump(out_json, f)
-
-    sample_vid = video_name
-    logger.debug('\nSamples of generated results : vid: {}, info: {}'.format(sample_vid, out_json['results'][sample_vid][:10]))
-
-    return caption_scores
+    return scores
 
 
 def tap_nms(tap_json, score_threshold, nms_threshold, top_n):
@@ -175,22 +176,12 @@ def tap_nms(tap_json, score_threshold, nms_threshold, top_n):
     return tap_json
 
 
-def nms(caption_json, score_threshold, nms_threshold, top_n):
-    for video_name in caption_json.keys():
-        v_prop_timestamp = [prop['timestamp'] for prop in caption_json[video_name]]
-        score = [prop['proposal_score'] for prop in caption_json[video_name]]
-        start, end = list(zip(*v_prop_timestamp))
-        remain_id = _nms(start, end, score, score_threshold=score_threshold, overlap=nms_threshold, top_n=top_n)
-        v_info = [item for i, item in enumerate(caption_json[video_name]) if i in remain_id]
-        caption_json[video_name] = v_info
-    return caption_json
-
-
 def _nms(start, end, scores, score_threshold, overlap=0.8, top_n=100):
     if len(start) == 0:
         return []
     start, end = map(np.array, (start, end))
     ind = np.argsort(scores)
+
     ind = np.array([k for k in ind if scores[k] > score_threshold])
 
     area = end - start

@@ -18,17 +18,19 @@ def parse_opts():
     #  ***************************** INPUT DATA PATH *****************************
     parser.add_argument('--train_caption_file', type=str,
                         default='data/captiondata/train_modified.json', help='')
-    parser.add_argument('--invalid_video_json', type=str, default='data/resnet_bn_invalid_videos.json')
+    parser.add_argument('--invalid_video_json', type=str, default='')
     parser.add_argument('--val_caption_file', type=str, default='data/captiondata/val_1.json')
     parser.add_argument('--visual_feature_folder', type=str, default='data/resnet_bn')
     parser.add_argument('--train_proposal_file', type=str, default='',
-                        help='generated results on trainset of a Temporal Action Proposal model')
+                        help='generated results on trainset by a Temporal Action Proposal model')
+    parser.add_argument('--eval_proposal_file', type=str, default='',
+                        help='generated results on valset by a Temporal Action Proposal model')
     parser.add_argument('--visual_feature_type', type=str, default='c3d', choices=['c3d', 'resnet_bn', 'resnet'])
     parser.add_argument('--feature_dim', type=int, default=500, help='dim of frame-level feature vector')
-    parser.add_argument('--dict_file', type=str, default='data/vocabulary_activitynet.json', help='')
+    # parser.add_argument('--dict_file', type=str, default='data/vocabulary_activitynet.json', help='')
 
-    parser.add_argument('--start_from', type=str, default='', help='id of the run with incomplete training')
-    parser.add_argument('--start_from_mode', type=str, choices=['best', 'best-RL', 'last'], default="last")
+    parser.add_argument('--start_from', type=str, default='', help='id of the run with incompleted training')
+    parser.add_argument('--start_from_mode', type=str, choices=['best', 'last'], default="last")
     parser.add_argument('--pretrain', action='store_true')
     parser.add_argument('--pretrain_path', type=str, default='', help='path of .pth')
 
@@ -43,22 +45,20 @@ def parse_opts():
     # ***************************** Event ENCODER  *****************************
     parser.add_argument('--event_encoder_type', type=str, choices=['basic', 'TSRM'], default='basic')
     parser.add_argument('--hidden_dim', type=int, default=512, help='hidden size of all fc layers')
-    parser.add_argument('--group_num', type=int, default=16, help='')
-    parser.add_argument('--use_posit_branch', type=int, default=1, help='')
+    parser.add_argument('--position_encoding_size', type=int, default=100)
 
-    #  ***************************** CAPTION DECODER  *****************************
-    parser.add_argument('--wordRNN_input_feats_type', type=str, default='C', choices=['C', 'E', 'C+E'],
+    #  ***************************** DECODER  *****************************
+    parser.add_argument('--decoder_input_feats_type', type=str, default='C', choices=['C', 'E', 'C+E'],
                         help='C:clip-level features, E: event-level features, C+E: both')
-    parser.add_argument('--caption_decoder_type', type=str, default="show_attend_tell",
+    parser.add_argument('--decoder_type', type=str, default="show_attend_tell",
                         choices=['show_attend_tell', 'hrnn', 'cmg_hrnn'])
     parser.add_argument('--rnn_size', type=int, default=512,
                         help='size of the rnn in number of hidden nodes in each layer')
-    parser.add_argument('--num_layers', type=int, default=1, help='number of layers in the RNN')
-    parser.add_argument('--input_encoding_size', type=int, default=512,
-                        help='the encoding size of each token in the vocabulary')
+    parser.add_argument('--num_layers', type=int, default=1, help='number of layers in the decoderRNN')
+
     parser.add_argument('--att_hid_size', type=int, default=512, help='the hidden size of the attention MLP')
     parser.add_argument('--drop_prob', type=float, default=0.5, help='strength of dropout in the Language Model RNN')
-    parser.add_argument('--max_caption_len', type=int, default=30, help='')
+    parser.add_argument('--max_decoding_len', type=int, default=30, help='')
 
     #  ***************************** OPTIMIZER *****************************
 
@@ -85,9 +85,6 @@ def parse_opts():
                         help='How much to update the prob')
     parser.add_argument('--scheduled_sampling_max_prob', type=float, default=0.25,
                         help='Maximum scheduled sampling prob.')
-
-    # self critical learning
-    parser.add_argument('--self_critical_after', type=int, default=-1)
 
     #  ***************************** SAVING AND LOGGING *****************************
     parser.add_argument('--min_epoch_when_save', type=int, default=-1)

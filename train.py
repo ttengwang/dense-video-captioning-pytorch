@@ -18,7 +18,7 @@ from eval_utils import evaluate
 import opts
 import misc.utils as utils
 from tensorboardX import SummaryWriter
-from models.EncoderDecoder import EncoderDecoder, init_scorer
+from models.EncoderDecoder import EncoderDecoder
 from misc.utils import print_alert_message, build_floder, create_logger, backup_envir, print_opt, set_seed
 from dataset import PropSeqDataset, collate_fn
 
@@ -55,12 +55,12 @@ def train(opt):
 
     train_dataset = PropSeqDataset(opt.train_caption_file,
                                    opt.visual_feature_folder,
-                                   opt.dict_file, True, opt.train_proposal_type,
+                                   True, opt.train_proposal_type,
                                    logger, opt)
 
     val_dataset = PropSeqDataset(opt.val_caption_file,
                                  opt.visual_feature_folder,
-                                 opt.dict_file, False, 'gt',
+                                 False, 'gt',
                                  logger, opt)
 
     train_loader = DataLoader(train_dataset, batch_size=opt.batch_size,
@@ -76,7 +76,6 @@ def train(opt):
     loss_history = saved_info['history'].get('loss_history', {})
     lr_history = saved_info['history'].get('lr_history', {})
     opt.current_lr = vars(opt).get('current_lr', opt.lr)
-    opt.vocab_size = train_loader.dataset.vocab_size
 
     # Build model
     model = EncoderDecoder(opt)
@@ -86,8 +85,6 @@ def train(opt):
     if opt.start_from and (not opt.pretrain):
         if opt.start_from_mode == 'best':
             model_pth = torch.load(os.path.join(save_folder, 'model-best-CE.pth'))
-        elif opt.start_from_mode == 'best-RL':
-            model_pth = torch.load(os.path.join(save_folder, 'model-best-RL.pth'))
         elif opt.start_from_mode == 'last':
             model_pth = torch.load(os.path.join(save_folder, 'model-last.pth'))
         logger.info('Loading pth from {}, iteration:{}'.format(save_folder, iteration))
@@ -138,15 +135,7 @@ def train(opt):
                 frac = (epoch - opt.scheduled_sampling_start) // opt.scheduled_sampling_increase_every
                 opt.ss_prob = min(opt.basic_ss_prob + opt.scheduled_sampling_increase_prob * frac,
                                   opt.scheduled_sampling_max_prob)
-                model.caption_decoder.ss_prob = opt.ss_prob
-
-            # self critical learning flag
-            if opt.self_critical_after != -1 and epoch >= opt.self_critical_after:
-                sc_flag = True
-                init_scorer()
-                model.caption_decoder.ss_prob = 0
-            else:
-                sc_flag = False
+                model.decoder.ss_prob = opt.ss_prob
 
         # Batch-level iteration
         for dt in tqdm(train_loader):
@@ -168,12 +157,10 @@ def train(opt):
             dt = collections.defaultdict(lambda: None, dt)
 
             if True:
-                train_mode = 'train_rl' if sc_flag else 'train'
+                train_mode = 'train'
 
-                loss, sample_score, greedy_score = model(dt, mode=train_mode, loader=train_loader)
+                loss = model(dt, mode=train_mode)
                 loss_sum[0] = loss_sum[0] + loss.item()
-                loss_sum[1] = loss_sum[1] + sample_score.mean().item()
-                loss_sum[2] = loss_sum[2] + greedy_score.mean().item()
 
                 loss.backward()
                 utils.clip_gradient(optimizer, opt.grad_clip)
@@ -192,10 +179,8 @@ def train(opt):
                                 (end - start) / losses_log_every, bad_video_num))
 
                 tf_writer.add_scalar('lr', opt.current_lr, iteration)
-                tf_writer.add_scalar('ss_prob', model.caption_decoder.ss_prob, iteration)
+                tf_writer.add_scalar('ss_prob', model.decoder.ss_prob, iteration)
                 tf_writer.add_scalar('train_caption_loss', losses[0].item(), iteration)
-                tf_writer.add_scalar('train_rl_sample_score', losses[1].item(), iteration)
-                tf_writer.add_scalar('train_rl_greedy_score', losses[2].item(), iteration)
 
                 loss_history[iteration] = losses.tolist()
                 lr_history[iteration] = opt.current_lr
@@ -208,14 +193,14 @@ def train(opt):
         if (epoch % opt.save_checkpoint_every == 0) and (epoch >= opt.min_epoch_when_save) and (epoch != 0):
             model.eval()
 
-            dvc_json_path = os.path.join(save_folder, 'prediction',
+            result_json_path = os.path.join(save_folder, 'prediction',
                                          'num{}_epoch{}_score{}_nms{}_top{}.json'.format(
                                              len(val_dataset), epoch, opt.eval_score_threshold,
                                              opt.eval_nms_threshold, opt.eval_top_n))
-            eval_score = evaluate(model, val_loader, dvc_json_path, './data/captiondata/val_1_for_tap.json',
+            eval_score = evaluate(model, val_loader, result_json_path,
                                   opt.eval_score_threshold, opt.eval_nms_threshold,
-                                  opt.eval_top_n, logger=logger)
-            current_score = np.array(eval_score['METEOR']).mean()
+                                  opt.eval_top_n, False, 1, logger=logger)
+            current_score = 2./(1./eval_score['Precision'] + 1./eval_score['Recall'])
 
             # add to tf summary
             for key in eval_score.keys():
@@ -223,13 +208,6 @@ def train(opt):
             _ = [item.append(np.array(item).mean()) for item in eval_score.values() if isinstance(item, list)]
             print_info = '\n'.join([key + ":" + str(eval_score[key]) for key in eval_score.keys()])
             logger.info('\nValidation results of iter {}:\n'.format(iteration) + print_info)
-
-            # for name, param in model.named_parameters():
-            #     tf_writer.add_histogram(name, param.clone().cpu().data.numpy(), iteration, bins=10)
-            #     if param.grad is not None:
-            #         tf_writer.add_histogram(name + '_grad', param.grad.clone().cpu().data.numpy(), iteration,
-            #                                 bins=10)
-
             val_result_history[epoch] = {'eval_score': eval_score}
 
             # Save model
@@ -253,21 +231,19 @@ def train(opt):
                                       'iter': iteration,
                                       'epoch': best_epoch,
                                       'best_val_score': best_val_score,
-                                      'dvc_json_path': dvc_json_path,
-                                      'METEOR': eval_score['METEOR'],
+                                      'result_json_path': result_json_path,
                                       'avg_proposal_num': eval_score['avg_proposal_number'],
                                       'Precision': eval_score['Precision'],
                                       'Recall': eval_score['Recall']
                                       }
 
-                suffix = "RL" if sc_flag else "CE"
-                torch.save(saved_pth, os.path.join(save_folder, 'model-best-{}.pth'.format(suffix)))
+                # suffix = "RL" if sc_flag else "CE"
+                torch.save(saved_pth, os.path.join(save_folder, 'model-best.pth'))
                 logger.info('Save Best-model at iter {} to checkpoint file.'.format(iteration))
 
             saved_info['last'] = {'opt': vars(opt),
                                   'iter': iteration,
                                   'epoch': epoch,
-
                                   'best_val_score': best_val_score,
                                   }
             saved_info['history'] = {'val_result_history': val_result_history,

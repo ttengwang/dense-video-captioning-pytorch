@@ -34,23 +34,20 @@ def main(opt):
     # Create the Data Loader instance
     val_dataset = PropSeqDataset(opt.eval_caption_file,
                                  opt.visual_feature_folder,
-                                 opt.dict_file, False, 'gt',
+                                 False, 'gt',
                                  logger, opt)
     loader = DataLoader(val_dataset, batch_size=opt.batch_size,
                         shuffle=False, num_workers=opt.nthreads, collate_fn=collate_fn)
 
-    opt.vocab_size = val_dataset.vocab_size
     model = EncoderDecoder(opt)
 
     if opt.eval_model_path:
         model_path = opt.eval_model_path
     else:
-        model_path = os.path.join(folder_path, 'model-best-CE.pth')
-        if not os.path.exists(model_path):
-            model_path = os.path.join(folder_path, 'model-best-RL.pth')
+        model_path = os.path.join(folder_path, 'model-best.pth')
 
     while not os.path.exists(model_path):
-        assert AssertionError('File {} does not exist'.format(model_path))
+        raise AssertionError('File {} does not exist'.format(model_path)) #TODO
 
     logger.debug('Loading model from {}'.format(model_path))
 
@@ -64,12 +61,12 @@ def main(opt):
         model.cuda()
 
     dvc_json_path = os.path.join(folder_path, '{}_epoch{}_num{}_score{}_nms{}_top{}.json'.format(
-        time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) + str(opt.id), epoch, len(loader.dataset),
+        time.strftime("%Y-%m-%d-%H-%M-%S_", time.localtime()) + str(opt.id), epoch, len(loader.dataset),
         opt.eval_score_threshold, opt.eval_nms_threshold, opt.eval_top_n))
 
-    caption_scores = evaluate(model, loader, dvc_json_path, opt.load_tap_json,
+    caption_scores = evaluate(model, loader, opt.load_tap_json,
                               opt.eval_score_threshold, opt.eval_nms_threshold,
-                              opt.eval_top_n, logger)
+                              opt.eval_top_n, opt.eval_esgn_jointrank, opt.eval_esgn_topN, logger)
 
     avg_eval_score = {key: np.array(value).mean() for key, value in caption_scores.items() if key !='tiou'}
     avg_eval_score2 = {key: np.array(value).mean() * 4917 / len(loader.dataset) for key, value in caption_scores.items() if key != 'tiou'}
@@ -94,6 +91,9 @@ if __name__ == '__main__':
     parser.add_argument('--eval_top_n', type=int, default=100)
     parser.add_argument('--load_tap_json', type=str, default='data/captiondata/val_1_for_tap.json')
     parser.add_argument('--eval_caption_file', type=str, default='data/captiondata/val_1.json')
+    parser.add_argument('--eval_proposal_file', type=str, default='data/generated_proposals/dbg_trainval_top100.json')
+    parser.add_argument('--eval_esgn_jointrank', type=int, default=False)
+    parser.add_argument('--eval_esgn_topN', type=int, default=1)
     parser.add_argument('--gpu_id', type=str, nargs='+', default=['0'])
     opt = parser.parse_args()
 

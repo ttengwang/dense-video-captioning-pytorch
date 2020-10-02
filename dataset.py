@@ -19,26 +19,27 @@ BN_VAR = 3.6579982046018844
 def collate_fn(batch):
     batch_size = len(batch)
     feature_size = batch[0][0].shape[1]
-    feature_list, timestamps_list, gt_timestamps_list, event_seq_idx, seq_gt_idx, gt_idx, caption_list, raw_timestamp, gt_raw_timestamp, raw_duration, raw_caption, key = zip( *batch)
+    feature_list, timestamps_list, gt_timestamps_list, iou_mat, gt_idx, raw_timestamp, raw_prop_score, gt_raw_timestamp, raw_duration, key = zip(
+        *batch)
 
     max_video_length = max([x.shape[0] for x in feature_list])
-    max_caption_length = max(chain(*[[len(caption) for caption in captions] for captions in caption_list]))
-    total_caption_num = sum(chain([len(captions) for captions in caption_list]))
+    # max_caption_length = max(chain(*[[len(caption) for caption in captions] for captions in caption_list]))
+    # total_caption_num = sum(chain([len(captions) for captions in caption_list]))
     total_proposal_num = sum(chain([len(timestamp) for timestamp in timestamps_list]))
 
     video_tensor = torch.FloatTensor(batch_size, max_video_length, feature_size).zero_()
     video_length = torch.FloatTensor(batch_size, 2).zero_()  # true length, sequence length
     video_mask = torch.FloatTensor(batch_size, max_video_length, 1).zero_()
 
-    caption_tensor = torch.LongTensor(total_caption_num, max_caption_length).zero_()
+    # caption_tensor = torch.LongTensor(total_caption_num, max_caption_length).zero_()
 
-    caption_length = torch.LongTensor(total_caption_num).zero_()
-    caption_mask = torch.FloatTensor(total_caption_num, max_caption_length, 1).zero_()
-    caption_gather_idx = torch.LongTensor(total_caption_num).zero_()
+    # caption_length = torch.LongTensor(total_caption_num).zero_()
+    # caption_mask = torch.FloatTensor(total_caption_num, max_caption_length, 1).zero_()
+    # caption_gather_idx = torch.LongTensor(total_caption_num).zero_()
     proposal_gather_idx = torch.LongTensor(total_proposal_num).zero_()
 
     # index information for finding corresponding gt captions
-    gt_idx_tensor = torch.LongTensor(total_proposal_num,3).zero_()
+    gt_idx_tensor = torch.LongTensor(total_proposal_num, 3).zero_()
 
     total_caption_idx = 0
     total_proposal_idx = 0
@@ -62,13 +63,13 @@ def collate_fn(batch):
         gt_proposal_length = len(gt_timestamps_list[idx])
         gt_timestamps = list(chain(*gt_timestamps_list))
 
-        caption_gather_idx[total_caption_idx:total_caption_idx + gt_proposal_length] = idx
+        # caption_gather_idx[total_caption_idx:total_caption_idx + gt_proposal_length] = idx
 
-        for iidx, captioning in enumerate(caption_list[idx]):
-            _caption_len = len(captioning)
-            caption_length[total_caption_idx + iidx] = _caption_len
-            caption_tensor[total_caption_idx + iidx, :_caption_len] = torch.from_numpy(captioning)
-            caption_mask[total_caption_idx + iidx, :_caption_len, 0] = 1
+        # for iidx, captioning in enumerate(caption_list[idx]):
+        #     _caption_len = len(captioning)
+        #     caption_length[total_caption_idx + iidx] = _caption_len
+        #     caption_tensor[total_caption_idx + iidx, :_caption_len] = torch.from_numpy(captioning)
+        #     caption_mask[total_caption_idx + iidx, :_caption_len, 0] = 1
         total_caption_idx += gt_proposal_length
         total_proposal_idx += proposal_length
 
@@ -86,30 +87,18 @@ def collate_fn(batch):
             {
                 "featstamps": timestamps,  # list,        (lnt_all_event_num, 2)
                 "timestamp": list(raw_timestamp),  # list (len: video_num) of tensors (shape: (~lnt_event_num, 2))
+                "prop_score": torch.FloatTensor(list(chain(*raw_prop_score))),
                 "gather_idx": proposal_gather_idx,  # tensor, (lnt_all_event_num)
+                "iou_mat": torch.FloatTensor(iou_mat),
                 "gt_idx": gt_idx_tensor,  # tensor,      (lnt_all_event_num, 3)
-
-                # only available when video_num = 1
-                "event_seq_idx": event_seq_idx,
-                # list (len: video_num) of tensors (shape: (eseq_num, eseq_len)), eseq_len = 1 means we do not use event sequence
-                "seq_gt_idx": seq_gt_idx,
-                # list (len: video_num) of tensors(shape: (eseq_num, eseq_len)), eseq_len = 1 means we do not use event sequence
             },
 
         "gt":
             {
                 "featstamps": gt_timestamps,  # list,        (gt_all_event_num, 2)
                 "timestamp": list(gt_raw_timestamp),  # list (len: video_num) of tensors (shape: (gt_event_num, 2))
-                "gather_idx": caption_gather_idx,  # tensor,      (gt_all_event_num)
+                "gather_idx": None,  # tensor,      (gt_all_event_num)
             },
-
-        "cap":
-            {
-                "tensor": caption_tensor,  # tensor,      (gt_all_event_num, cap_len)
-                "length": caption_length,  # tensor,      (gt_all_event_num)
-                "mask": caption_mask,  # tensor,      (gt_all_event_num, cap_len, 1)
-                "raw": list(raw_caption),  # list,        (video_num, ~gt_event_num, ~~caption_len)
-            }
     }
     dt = {k1 + '_' + k2: v2 for k1, v1 in dt.items() for k2, v2 in v1.items()}
     return dt
@@ -117,70 +106,31 @@ def collate_fn(batch):
 
 class EDVCdataset(Dataset):
 
-    def __init__(self, anno_file, feature_folder, translator_json, is_training, proposal_type, logger,
+    def __init__(self, anno_file, feature_folder, is_training, proposal_type, logger,
                  opt):
-
         super(EDVCdataset, self).__init__()
         self.anno = json.load(open(anno_file, 'r'))
-
-        self.translator = json.load(open(translator_json, 'r'))
-        self.vocab_size = len(self.translator['word_to_ix'].keys())
-
-        self.translator['word_to_ix'] = defaultdict(lambda: self.vocab_size,
-                                                    self.translator['word_to_ix'])
-        self.translator['ix_to_word'] = defaultdict(lambda: self.vocab_size,
-                                                    self.translator['ix_to_word'])
-        self.max_caption_len = opt.max_caption_len
-        logger.info('load translator, total_vocab: %d', len(self.translator['ix_to_word']))
-
         self.keys = self.anno.keys()
         if opt.invalid_video_json:
             invalid_videos = json.load(open(opt.invalid_video_json))
             self.keys = [k for k in self.keys if k[:13] not in invalid_videos]
-        logger.info('load captioning file, %d captioning loaded', len(self.keys))
+        logger.info('load annotation file, %d videos loaded', len(self.keys))
 
         self.feature_folder = feature_folder
         self.feature_sample_rate = opt.feature_sample_rate
         self.opt = opt
-
         self.proposal_type = proposal_type
         self.is_training = is_training
         self.train_proposal_sample_num = opt.train_proposal_sample_num
-
         self.feature_dim = self.opt.feature_dim
-
-        if self.is_training and opt.train_proposal_file:
-            self.train_proposal_file = json.load(open(opt.train_proposal_file))['results']
-            for vid in self.train_proposal_file.keys():
-                v_data = self.train_proposal_file[vid]
-                v_data = [p for p in v_data if p['score'] > 0]
-                tmp = sorted(v_data, key=lambda x: x['segment'])
-                self.train_proposal_file[vid] = tmp
-            tp_keys = set(self.train_proposal_file.keys())
-            self.keys = [k for k in self.keys if k[2:13] in tp_keys]
+        self.proposal_file = self.opt.train_proposal_file if self.is_training else self.opt.eval_proposal_file
+        self.proposal_data = json.load(open(self.proposal_file))['results']
+        self.proposal_data = sort_events(self.proposal_data)
+        tp_keys = set(self.proposal_data.keys())
+        self.keys = [k for k in self.keys if k[2:13] in tp_keys]
 
     def __len__(self):
         return len(self.keys)
-
-
-    def translate(self, sentence, max_len):
-        tokens = [',', ':', '!', '_', ';', '-', '.', '?', '/', '"', '\\n', '\\', '.']
-        for token in tokens:
-            sentence = sentence.replace(token, ' ')
-        sentence_split = sentence.replace('.', ' . ').replace(',', ' , ').lower().split()
-        res = np.array(
-            [0] + [self.translator['word_to_ix'][word] for word in sentence_split][:max_len - 2] + [0])
-        return res
-
-    def rtranslate(self, sent_ids):
-        for i in range(len(sent_ids)):
-            if sent_ids[i] == 0:
-                sent_ids = sent_ids[:i]
-                break
-        if len(sent_ids):
-            return ' '.join([self.translator['ix_to_word'][str(idx)] for idx in sent_ids]) + '.'
-        else:
-            return ''
 
     def process_time_step(self, duration, timestamps_list, feature_length):
         duration = np.array(duration)
@@ -196,50 +146,8 @@ class EDVCdataset(Dataset):
 
 class PropSeqDataset(EDVCdataset):
 
-    def __init__(self, anno_file, feature_folder, translator_pickle, is_training, proposal_type,
-                 logger,
-                 opt):
-        super(PropSeqDataset, self).__init__(anno_file,
-                                             feature_folder, translator_pickle, is_training, proposal_type,
-                                             logger, opt)
-
-    def sample_proposal_seq(self, iou_mat, sample_num, iou_thres=0):
-
-        gt_num, lnt_num = iou_mat.shape
-
-        lnt_max_ids = np.argmax(iou_mat, 0)
-        gt_max_ids = np.argmax(iou_mat, 1)
-
-        for i in range(gt_num):
-            if iou_mat[i, gt_max_ids[i]] > 0:
-                lnt_max_ids[gt_max_ids[i]] = i  # assure each gt proposal matches at last one learnt proposal
-        gt2lnt = {}
-
-        # print(lnt_max_ids)
-        for j in range(lnt_num):
-            if np.max(iou_mat[:, j]) > iou_thres:
-                gt2lnt[lnt_max_ids[j]] = gt2lnt.get(lnt_max_ids[j], [])
-                gt2lnt[lnt_max_ids[j]].append(j)
-
-        # print(gt2lnt)
-        valid_gt_num = len(gt2lnt)
-        event_seq_idx = np.zeros((sample_num, valid_gt_num)).astype('int')
-        seq_gt_idx = np.zeros((sample_num, valid_gt_num)).astype('int')
-
-        for i in range(sample_num):
-            j = 0
-            col = 0
-            while (j < gt_num):
-                if j not in gt2lnt.keys():
-                    j += 1
-                    continue
-                id = random.choice(gt2lnt[j])
-                event_seq_idx[i][col] = id
-                seq_gt_idx[i][col] = j
-                col += 1
-                j += 1
-
-        return event_seq_idx, seq_gt_idx, lnt_max_ids
+    def __init__(self, anno_file, feature_folder, is_training, proposal_type, logger, opt):
+        super(PropSeqDataset, self).__init__(anno_file, feature_folder, is_training, proposal_type, logger, opt)
 
     def sample_proposal(self, iou_mat, sample_num, sample_len, iou_thres=0):
         gt_num, lnt_num = iou_mat.shape
@@ -280,41 +188,25 @@ class PropSeqDataset(EDVCdataset):
         feats = self.load_feats(key)
         feats = feats[::self.feature_sample_rate, :]
         duration = self.anno[key]['duration']
-        captions = self.anno[key]['sentences']
         gt_timestamps = self.anno[key]['timestamps']  # [gt_num, 2]
-
-        caption_label = [np.array(self.translate(sent, self.max_caption_len)) for sent in captions]
+        end_token = [duration / 99 * 98, duration]
+        gt_timestamps.append(end_token)
         gt_featstamps = self.process_time_step(duration, gt_timestamps, feats.shape[0])
 
-        if self.proposal_type == 'learnt_seq':
-            lnt_timestamps = [p['segment'] for p in self.train_proposal_file[key[2:13]]]  # [p_num ,2]
-            lnt_featstamps = self.process_time_step(duration, lnt_timestamps, feats.shape[0])
-            iou_mat = iou(gt_timestamps, lnt_timestamps)
-            sample_num = min(int(500 / len(gt_timestamps)), self.train_proposal_sample_num)  # for GPU memory limitation
-            event_seq_idx, seq_gt_idx, gt_idx = self.sample_proposal_seq(iou_mat, sample_num, iou_thres=0)
+        lnt_timestamps = [p['segment'] for p in self.proposal_data[key[2:13]]]  # [p_num ,2]
+        lnt_score = [p['score'] for p in self.proposal_data[key[2:13]]]
+        train_sample_num = len(lnt_timestamps) if (
+                len(lnt_timestamps) < self.train_proposal_sample_num) else self.train_proposal_sample_num
+        random_ids = np.random.choice(list(range(len(lnt_timestamps))), train_sample_num, replace=False)
+        lnt_timestamps = [lnt_timestamps[_] for _ in range(len(lnt_timestamps)) if _ in random_ids]
+        lnt_timestamps.insert(0, end_token)
+        lnt_score.insert(0, 1e-10)
 
-        elif self.proposal_type == 'learnt':
-            lnt_timestamps = [p['segment'] for p in self.train_proposal_file[key[2:13]]]  # [p_num ,2]
-            train_sample_num = len(lnt_timestamps) if (
-                    len(lnt_timestamps) < self.train_proposal_sample_num) else self.train_proposal_sample_num
-            random_ids = np.random.choice(list(range(len(lnt_timestamps))), train_sample_num, replace=False)
-            lnt_timestamps = [lnt_timestamps[_] for _ in range(len(lnt_timestamps)) if _ in random_ids]
+        lnt_featstamps = self.process_time_step(duration, lnt_timestamps, feats.shape[0])
+        iou_mat = iou(gt_timestamps, lnt_timestamps)
+        _, _, gt_idx = self.sample_proposal(iou_mat, 1, train_sample_num)
 
-            lnt_featstamps = self.process_time_step(duration, lnt_timestamps, feats.shape[0])
-            iou_mat = iou(gt_timestamps, lnt_timestamps)
-            event_seq_idx, seq_gt_idx, gt_idx = self.sample_proposal(iou_mat, 1, train_sample_num)
-
-        elif self.proposal_type == 'gt':
-            lnt_timestamps = gt_timestamps
-            lnt_featstamps = gt_featstamps
-            gt_idx = np.arange(len(gt_timestamps))
-            event_seq_idx = seq_gt_idx = np.expand_dims(gt_idx, 0)
-
-        else:
-            assert AssertionError('proposal type error')
-
-        return feats, lnt_featstamps, gt_featstamps, event_seq_idx, seq_gt_idx, gt_idx, caption_label, \
-               lnt_timestamps, gt_timestamps, duration, captions, key
+        return feats, lnt_featstamps, gt_featstamps, iou_mat, gt_idx, lnt_timestamps, lnt_score, gt_timestamps, duration, key
 
 
 def iou(interval_1, interval_2):
@@ -328,7 +220,16 @@ def iou(interval_1, interval_2):
     return iou
 
 
-if __name__=="__main__":
+def sort_events(proposal_data):
+    for vid in proposal_data.keys():
+        v_data = proposal_data[vid]
+        v_data = [p for p in v_data if p['score'] > 0]
+        tmp = sorted(v_data, key=lambda x: x['segment'])
+        proposal_data[vid] = tmp
+    return proposal_data
+
+
+if __name__ == "__main__":
     import opts
     from tqdm import tqdm
     from misc.utils import build_floder, create_logger
@@ -338,10 +239,11 @@ if __name__=="__main__":
     logger = create_logger(save_folder, 'train.log')
     train_dataset = PropSeqDataset(opt.train_caption_file,
                                    opt.visual_feature_folder,
-                                   opt.dict_file, True, opt.train_proposal_type,
+                                   True, opt.train_proposal_type,
                                    logger, opt)
     train_loader = DataLoader(train_dataset, batch_size=opt.batch_size,
                               shuffle=True, num_workers=opt.nthreads, collate_fn=collate_fn)
     for dt in tqdm(train_loader):
+        print(dt)
         pass
     print('end')
