@@ -47,7 +47,6 @@ def convert_dvcjson_to_tapjson(dvc_json, tap_json):
         timestamps = [data[video_name][i]['timestamp'] for i in range(event_num)]
         # sentences = [data[video_name][i]['sentence'] for i in range(event_num)]
         for i, timestamp in enumerate(timestamps):
-            # TODO same bug in DXCP
             score = data[video_name][i].get('proposal_score', 1.0)
             video_info.append({'segment': timestamp, 'score': score})
         out['results'][video_name[2:]] = video_info
@@ -110,7 +109,7 @@ def esgn_reranking(esgn_score, prop_score, topN=10):
     return seq, np.array(prob)
 
 
-def evaluate(model, loader, tap_json_path, score_threshold=0.1, nms_threshold=0.8, top_n=100, esgn_jointrank=False,
+def evaluate(model, loader, tap_json_path, score_threshold=0.1, nms_threshold=0.8, top_n=100, esgn_rerank=False,
              esgn_topN=1, logger=None):
     out_json = {'results': {},
                 'version': "VERSION 1.0",
@@ -126,8 +125,8 @@ def evaluate(model, loader, tap_json_path, score_threshold=0.1, nms_threshold=0.
                 dt = {key: _.cuda() if isinstance(_, torch.Tensor) else _ for key, _ in dt.items()}
             dt = collections.defaultdict(lambda: None, dt)
 
-            if esgn_jointrank:
-                seq, sg_prob, weights = model(dt, mode='eval_jointrank')
+            if esgn_rerank:
+                seq, sg_prob, weights = model(dt, mode='eval_rerank')
                 if len(weights):
                     seq, prob = esgn_reranking(weights.detach().cpu().numpy(),
                                             dt['lnt_prop_score'].detach().cpu().numpy(), topN=esgn_topN)

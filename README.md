@@ -1,5 +1,5 @@
 # Event Sequence Generation Network
-Uoffical Re-implementation of Event Sequence Selection Network (ESGN) in paper titled "[streamlined dense video captioning](https://arxiv.org/abs/1904.03870v1)". Note that we do not adopt SST to encode frame-level features, which is different from the original model.
+Unoffical Re-implementation of Event Sequence Selection Network (ESGN) in paper titled "[streamlined dense video captioning](https://arxiv.org/abs/1904.03870v1)". Note that we do not adopt SST to encode frame-level features, which is different from the original model.
 
 # Environment
 1. Python 3.6.2
@@ -24,6 +24,9 @@ validation with re-ranking,
 ```
 python eval.py --eval_folder esgn_run0 --eval_esgn_rerank 1 
 ```
+
+# Performance and Pretrained model
+Coming soon
 
 
 # References

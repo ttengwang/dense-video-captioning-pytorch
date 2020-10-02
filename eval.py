@@ -66,7 +66,7 @@ def main(opt):
 
     caption_scores = evaluate(model, loader, opt.load_tap_json,
                               opt.eval_score_threshold, opt.eval_nms_threshold,
-                              opt.eval_top_n, opt.eval_esgn_jointrank, opt.eval_esgn_topN, logger)
+                              opt.eval_top_n, opt.eval_esgn_rerank, opt.eval_esgn_topN, logger)
 
     avg_eval_score = {key: np.array(value).mean() for key, value in caption_scores.items() if key !='tiou'}
     avg_eval_score2 = {key: np.array(value).mean() * 4917 / len(loader.dataset) for key, value in caption_scores.items() if key != 'tiou'}
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('--load_tap_json', type=str, default='data/captiondata/val_1_for_tap.json')
     parser.add_argument('--eval_caption_file', type=str, default='data/captiondata/val_1.json')
     parser.add_argument('--eval_proposal_file', type=str, default='data/generated_proposals/dbg_trainval_top100.json')
-    parser.add_argument('--eval_esgn_jointrank', type=int, default=False)
+    parser.add_argument('--eval_esgn_retrank', type=int, default=False)
     parser.add_argument('--eval_esgn_topN', type=int, default=1)
     parser.add_argument('--gpu_id', type=str, nargs='+', default=['0'])
     opt = parser.parse_args()

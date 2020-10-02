@@ -60,9 +60,9 @@ class EncoderDecoder(nn.Module):
                 seq, prob = self.decoder.sample(event, pos_feats)
             return seq, prob
 
-        elif mode == 'eval_jointrank':
+        elif mode == 'eval_rerank':
             with torch.no_grad():
-                seq, sg_prob,weights = self.decoder.sample_jointrank(event, pos_feats, dt['lnt_prop_score'])
+                seq, sg_prob,weights = self.decoder.sample_rerank(event, pos_feats, dt['lnt_prop_score'])
             return seq, sg_prob,weights
         else:
             raise AssertionError

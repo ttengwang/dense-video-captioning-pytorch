@@ -7,7 +7,7 @@ visual_feature_type: c3d
 visual_feature_folder: 'data/c3d'
 
 batch_size: 1
-event_encoder_type: basic
+event_encoder_type: rnn
 lr: 0.00005
 
 train_proposal_file: data/generated_proposals/dbg_trainval_top100.json

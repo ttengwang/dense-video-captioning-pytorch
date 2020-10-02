@@ -131,7 +131,7 @@ class ESGNBasic(nn.Module):
         return torch.cat([_.unsqueeze(1) for _ in seq], 1), torch.cat([_.unsqueeze(1) for _ in seqLogprobs], 1)
 
 
-    def sample_jointrank(self, event, pos_feats, prop_score, opt={}):
+    def sample_rerank(self, event, pos_feats, prop_score, opt={}):
 
         sample_max = opt.get('sample_max', 1)
 
