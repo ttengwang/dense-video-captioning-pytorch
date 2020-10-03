@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval_top_n', type=int, default=100)
     parser.add_argument('--eval_caption_file', type=str, default='data/captiondata/val_1.json')
     parser.add_argument('--eval_proposal_file', type=str, default='data/generated_proposals/dbg_trainval_top100.json')
-    parser.add_argument('--eval_esgn_rerank', type=int, default=0)
+    parser.add_argument('--eval_esgn_rerank', action='store_true')
     parser.add_argument('--eval_esgn_topN', type=int, default=1)
     parser.add_argument('--gpu_id', type=str, nargs='+', default=['0'])
     opt = parser.parse_args()

@@ -126,7 +126,7 @@ def evaluate(model, loader, tap_json_path, score_threshold=0.1, nms_threshold=0.
             if torch.cuda.is_available():
                 dt = {key: _.cuda() if isinstance(_, torch.Tensor) else _ for key, _ in dt.items()}
             dt = collections.defaultdict(lambda: None, dt)
-            pdb.set_trace()
+
             if esgn_rerank:
                 seq, sg_prob, weights = model(dt, mode='eval_rerank')
                 if len(weights):
