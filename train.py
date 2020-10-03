@@ -200,7 +200,7 @@ def train(opt):
             eval_score = evaluate(model, val_loader, result_json_path,
                                   opt.eval_score_threshold, opt.eval_nms_threshold,
                                   opt.eval_top_n, False, 1, logger=logger)
-            current_score = 2./(1./eval_score['Precision'] + 1./eval_score['Recall'])
+            current_score = np.array(eval_score['f1']).mean()
 
             # add to tf summary
             for key in eval_score.keys():

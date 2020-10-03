@@ -30,6 +30,7 @@ class ESGNBasic(nn.Module):
         self.max_decoding_len = opt.max_decoding_len
         self.ss_prob = 0.0 # Schedule sampling probability
         self.encoder_rnn = nn.GRU(opt.event_context_dim, self.rnn_size, self.num_layers, bias=False, dropout=self.drop_prob, batch_first=True)
+        # self.transfer_layer = nn.Linear(self.rnn_size, self.rnn_size)
         # self.logit = nn.Linear(self.rnn_size, self.vocab_size + 1)
         self.dropout = nn.Dropout(self.drop_prob)
         self.init_weights()
@@ -42,6 +43,9 @@ class ESGNBasic(nn.Module):
 
     def init_hidden(self, event):
         rnn_output, h_n = self.encoder_rnn(event)
+        h_n = self.dropout(h_n)
+        # batch_size, N, rnn_size = h_n.size()
+        # h_n = self.transfer_layer(h_n.reshape(-1, rnn_size)).reshape(batch_size, N, rnn_size)
         return h_n
 
     def build_loss(self, input, target):
@@ -52,7 +56,7 @@ class ESGNBasic(nn.Module):
     def forward(self, event, pos_feats, gt_seq):
 
         batch_size = event.shape[0]
-        hn = self.init_hidden(event[:,1:,:])
+        hn = self.init_hidden(event[:,2:,:])
 
         state = (hn, hn)
 
@@ -89,7 +93,7 @@ class ESGNBasic(nn.Module):
         temperature = opt.get('temperature', 1.0)
         batch_size = event.shape[0]
 
-        hn = self.init_hidden(event[:,1:,:])
+        hn = self.init_hidden(event[:,2:,:])
         state = (hn, hn)
         event = torch.cat((event, pos_feats), 2)
 
@@ -136,7 +140,7 @@ class ESGNBasic(nn.Module):
         sample_max = opt.get('sample_max', 1)
 
         batch_size = event.shape[0]
-        hn = self.init_hidden(event[:,1:,:])
+        hn = self.init_hidden(event[:,2:,:])
         state = (hn, hn)
         seq = []
         seqLogprobs = []

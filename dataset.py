@@ -111,8 +111,8 @@ class EDVCdataset(Dataset):
         super(EDVCdataset, self).__init__()
         self.anno = json.load(open(anno_file, 'r'))
         self.keys = self.anno.keys()
-        if opt.invalid_video_json:
-            invalid_videos = json.load(open(opt.invalid_video_json))
+        for json_path in opt.invalid_video_json:
+            invalid_videos = json.load(open(json_path))
             self.keys = [k for k in self.keys if k[:13] not in invalid_videos]
         logger.info('load annotation file, %d videos loaded', len(self.keys))
 
@@ -189,18 +189,22 @@ class PropSeqDataset(EDVCdataset):
         feats = feats[::self.feature_sample_rate, :]
         duration = self.anno[key]['duration']
         gt_timestamps = self.anno[key]['timestamps']  # [gt_num, 2]
-        end_token = [duration / 99 * 98, duration]
-        gt_timestamps.append(end_token)
         gt_featstamps = self.process_time_step(duration, gt_timestamps, feats.shape[0])
 
+        end_token = [duration / 99 * 98, duration / 99 * 99]
+        gt_timestamps.append(end_token)
         lnt_timestamps = [p['segment'] for p in self.proposal_data[key[2:13]]]  # [p_num ,2]
         lnt_score = [p['score'] for p in self.proposal_data[key[2:13]]]
         train_sample_num = len(lnt_timestamps) if (
                 len(lnt_timestamps) < self.train_proposal_sample_num) else self.train_proposal_sample_num
         random_ids = np.random.choice(list(range(len(lnt_timestamps))), train_sample_num, replace=False)
         lnt_timestamps = [lnt_timestamps[_] for _ in range(len(lnt_timestamps)) if _ in random_ids]
+
+        start_token = [duration / 99 * 0, duration / 99 * 1]
         lnt_timestamps.insert(0, end_token)
         lnt_score.insert(0, 1e-10)
+        lnt_timestamps.insert(1, start_token)
+        lnt_score.insert(1, 1e-10)
 
         lnt_featstamps = self.process_time_step(duration, lnt_timestamps, feats.shape[0])
         iou_mat = iou(gt_timestamps, lnt_timestamps)

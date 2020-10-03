@@ -80,7 +80,7 @@ class BRNNEncoder(BasicEncoder):
         super(BRNNEncoder, self).__init__(opt)
         self.opt = opt
         self.hidden_dim = self.opt.hidden_dim
-        self.frame_encoder = nn.LSTM(self.feature_dim, self.hidden_dim, num_layers=1, batch_first=True,
+        self.frame_encoder = nn.LSTM(self.opt.feature_dim, self.hidden_dim, num_layers=1, batch_first=True,
                                      dropout=0.5, bidirectional=True)
         self.frame_encoder_drop = nn.Dropout(p=0.5)
 

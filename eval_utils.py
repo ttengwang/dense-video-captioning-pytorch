@@ -78,6 +78,8 @@ def eval_mIOU_PR(tap_filename):
     dvc_score = eval_dvc.eval_score(tap_filename + '.tmp', onlyMeteor=0, onlyRecallPrec=1, topN=1000)
     score['avg_precison'] = dvc_score['Precision']
     score['avg_recall'] = dvc_score['Recall']
+    f1 = 2./(1./ np.array(dvc_score['Precision']) + 1. / np.array(dvc_score['Recall']))
+    score['f1'] = f1.tolist()
     return score
 
 
@@ -99,7 +101,7 @@ def esgn_reranking(esgn_score, prop_score, topN=10):
         for i in range(esgn_score.shape[1]):
             if np.argmax(esgn_score[vid][i]) == 0:
                 break
-            # attention here: we can use the unbalanced weight for esgn_score and proposal_score
+            # attention here: we can use the unbalanced weights for esgn_score and proposal_score
             s = esgn_score[vid][i] + (prop_score) * 0.8
             ids = np.argsort(-s)[:topN]
             sg_seq.extend(ids.tolist())
@@ -124,7 +126,7 @@ def evaluate(model, loader, tap_json_path, score_threshold=0.1, nms_threshold=0.
             if torch.cuda.is_available():
                 dt = {key: _.cuda() if isinstance(_, torch.Tensor) else _ for key, _ in dt.items()}
             dt = collections.defaultdict(lambda: None, dt)
-
+            pdb.set_trace()
             if esgn_rerank:
                 seq, sg_prob, weights = model(dt, mode='eval_rerank')
                 if len(weights):

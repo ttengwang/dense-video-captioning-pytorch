@@ -60,11 +60,11 @@ def main(opt):
     if torch.cuda.is_available():
         model.cuda()
 
-    dvc_json_path = os.path.join(folder_path, '{}_epoch{}_num{}_score{}_nms{}_top{}.json'.format(
+    out_json_path = os.path.join(folder_path, '{}_epoch{}_num{}_score{}_nms{}_top{}.json'.format(
         time.strftime("%Y-%m-%d-%H-%M-%S_", time.localtime()) + str(opt.id), epoch, len(loader.dataset),
         opt.eval_score_threshold, opt.eval_nms_threshold, opt.eval_top_n))
 
-    caption_scores = evaluate(model, loader, opt.load_tap_json,
+    caption_scores = evaluate(model, loader, out_json_path,
                               opt.eval_score_threshold, opt.eval_nms_threshold,
                               opt.eval_top_n, opt.eval_esgn_rerank, opt.eval_esgn_topN, logger)
 
@@ -89,10 +89,9 @@ if __name__ == '__main__':
     parser.add_argument('--eval_score_threshold', type=float, default=0.)
     parser.add_argument('--eval_nms_threshold', type=float, default=1.01)
     parser.add_argument('--eval_top_n', type=int, default=100)
-    parser.add_argument('--load_tap_json', type=str, default='data/captiondata/val_1_for_tap.json')
     parser.add_argument('--eval_caption_file', type=str, default='data/captiondata/val_1.json')
     parser.add_argument('--eval_proposal_file', type=str, default='data/generated_proposals/dbg_trainval_top100.json')
-    parser.add_argument('--eval_esgn_retrank', type=int, default=False)
+    parser.add_argument('--eval_esgn_rerank', type=int, default=0)
     parser.add_argument('--eval_esgn_topN', type=int, default=1)
     parser.add_argument('--gpu_id', type=str, nargs='+', default=['0'])
     opt = parser.parse_args()

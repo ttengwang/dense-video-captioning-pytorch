@@ -48,9 +48,11 @@ class EncoderDecoder(nn.Module):
         FIRST_DIM = 0
         event = event.unsqueeze(FIRST_DIM) # only avalilable for video number = 1
         if mode == 'train':
-            gt_seq = event.new_zeros((vid_num, 1 + len(dt['gt_featstamps'])), dtype=torch.int)
-            _, gt_seq_mid = dt['lnt_iou_mat'][:, :-1, 1:].max(dim=2)
-            gt_seq[:, 1:-1] = gt_seq_mid + 1
+
+            gt_seq = event.new_zeros((vid_num, 2 + len(dt['gt_featstamps'])), dtype=torch.int)
+            _, gt_seq_mid = dt['lnt_iou_mat'][:, :-1, 2:].max(dim=2)
+            gt_seq[:, 1:-1] = gt_seq_mid + 2
+            gt_seq[:, 0] = 1
             prob = self.decoder(event, pos_feats, gt_seq)
             loss = self.decoder.build_loss(dt['lnt_iou_mat'][FIRST_DIM], prob[FIRST_DIM])
             return loss
@@ -62,7 +64,7 @@ class EncoderDecoder(nn.Module):
 
         elif mode == 'eval_rerank':
             with torch.no_grad():
-                seq, sg_prob,weights = self.decoder.sample_rerank(event, pos_feats, dt['lnt_prop_score'])
+                seq, sg_prob, weights = self.decoder.sample_rerank(event, pos_feats, dt['lnt_prop_score'])
             return seq, sg_prob,weights
         else:
             raise AssertionError

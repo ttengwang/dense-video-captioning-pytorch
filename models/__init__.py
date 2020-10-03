@@ -4,7 +4,7 @@ def setup_event_encoder(opt):
     if opt.event_encoder_type == 'basic':
         model = BasicEncoder(opt)
     elif opt.event_encoder_type == 'brnn':
-        model = RNNEncoder(opt)
+        model = BRNNEncoder(opt)
     elif opt.event_encoder_type == 'rnn':
         model = RNNEncoder(opt)
     else:

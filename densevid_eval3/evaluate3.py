@@ -8,14 +8,14 @@
 import argparse
 import json
 import sys
-sys.path.insert(0, './coco-caption') # Hack to allow the import of pycocoeval
-sys.path.insert(0, './densevid_eval3/coco-caption') # Hack to allow the import of pycocoeval
+# sys.path.insert(0, './coco-caption') # Hack to allow the import of pycocoeval
+# sys.path.insert(0, './densevid_eval3/coco-caption') # Hack to allow the import of pycocoeval
 
-from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.meteor.meteor import Meteor
-from pycocoevalcap.rouge.rouge import Rouge
-from pycocoevalcap.cider.cider import Cider
+# from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
+# from pycocoevalcap.bleu.bleu import Bleu
+# from pycocoevalcap.meteor.meteor import Meteor
+# from pycocoevalcap.rouge.rouge import Rouge
+# from pycocoevalcap.cider.cider import Cider
 Set=set
 import numpy as np
 
@@ -45,19 +45,21 @@ class ANETcaptions(object):
         self.prediction = self.import_prediction(prediction_filename)
         self.ground_truths_keys = [vid for gt in self.ground_truths for vid in gt ]
         print('available video number', len(set(self.ground_truths_keys) & set(self.prediction.keys())))
-        self.tokenizer = PTBTokenizer()
+
         self.Score_log = {}
         # Set up scorers, if not verbose, we only use the one we're
         # testing on: METEOR
-        if self.verbose:
-            self.scorers = [
-                (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
-                (Meteor(),"METEOR"),
-                (Rouge(), "ROUGE_L"),
-                (Cider(), "CIDEr")
-            ]
-        else:
-            self.scorers = [(Meteor(), "METEOR")]
+        if not self.onlyRecall:
+            self.tokenizer = PTBTokenizer()
+            if self.verbose:
+                self.scorers = [
+                    (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
+                    (Meteor(),"METEOR"),
+                    (Rouge(), "ROUGE_L"),
+                    (Cider(), "CIDEr")
+                ]
+            else:
+                self.scorers = [(Meteor(), "METEOR")]
 
     def import_prediction(self, prediction_filename):
         #if self.verbose:

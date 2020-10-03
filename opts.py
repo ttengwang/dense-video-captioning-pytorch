@@ -8,7 +8,7 @@ def parse_opts():
     parser = argparse.ArgumentParser()
 
     # ID of this run
-    parser.add_argument('--cfg_path', type=str, default='cfgs/basic_rnn.yml', help='')
+    parser.add_argument('--cfg_path', type=str, default='cfgs/esgn.yml', help='')
     parser.add_argument('--id', type=str, default='default', help='id of this run')
     parser.add_argument('--gpu_id', type=str, nargs='+', default=['0'])
     parser.add_argument('--seed', type=int, default=777)
@@ -18,7 +18,7 @@ def parse_opts():
     #  ***************************** INPUT DATA PATH *****************************
     parser.add_argument('--train_caption_file', type=str,
                         default='data/captiondata/train_modified.json', help='')
-    parser.add_argument('--invalid_video_json', type=str, default='')
+    parser.add_argument('--invalid_video_json', type=str, nargs='+', default=['data/DBG_invalid_videos.json'])
     parser.add_argument('--val_caption_file', type=str, default='data/captiondata/val_1.json')
     parser.add_argument('--visual_feature_folder', type=str, default='data/resnet_bn')
     parser.add_argument('--train_proposal_file', type=str, default='',
@@ -79,8 +79,8 @@ def parse_opts():
     parser.add_argument('--scheduled_sampling_start', type=int, default=-1,
                         help='at what iteration to start decay gt probability')
     parser.add_argument('--basic_ss_prob', type=float, default=0, help='initial ss prob')
-    parser.add_argument('--scheduled_sampling_increase_every', type=int, default=2,
-                        help='every how many iterations thereafter to gt probability')
+    parser.add_argument('--scheduled_sampling_increase_every', type=int, default=1,
+                        help='every how many epoch thereafter to gt probability')
     parser.add_argument('--scheduled_sampling_increase_prob', type=float, default=0.05,
                         help='How much to update the prob')
     parser.add_argument('--scheduled_sampling_max_prob', type=float, default=0.25,
