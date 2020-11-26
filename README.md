@@ -42,7 +42,7 @@ python eval.py --eval_folder $result_folder --eval_caption_file $val_caption_fil
 # evaluation with learnt proposals (small val set with 1000 videos)
 result_folder=tsrm_cmg_hrnn_RL_enlarged_trainset
 lnt_tap_json=data/generated_proposals/tsn_dbg_esgn_valset_num4717.json
-python eval.py --eval_folder $result_folder --eval_caption_file $val_caption_file --load_tap_json $lnt_json_path
+python eval.py --eval_folder $result_folder --eval_caption_file $val_caption_file --load_tap_json $lnt_tap_json
 
 # evaluation with ground-truth proposals (standard val set with 4917 videos)
 result_folder=tsrm_cmg_hrnn
@@ -51,7 +51,7 @@ python eval.py --eval_folder $result_folder
 # evaluation with learnt proposals (standard val set with 4917 videos)
 result_folder=tsrm_cmg_hrnn
 lnt_tap_json=data/generated_proposals/tsn_dbg_esgn_valset_num4717.json
-python eval.py --eval_folder $result_folder --load_tap_json $lnt_json_path
+python eval.py --eval_folder $result_folder --load_tap_json $lnt_tap_json
 ```
 
 - Testing

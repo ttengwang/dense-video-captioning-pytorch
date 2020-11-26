@@ -53,8 +53,10 @@ def main(opt):
         raise AssertionError('File {} does not exist'.format(model_path))
 
     logger.debug('Loading model from {}'.format(model_path))
-
-    loaded_pth = torch.load(model_path)
+    if torch.cuda.is_available():
+        loaded_pth = torch.load(model_path)
+    else:
+        loaded_pth = torch.load(model_path, map_location=torch.device('cpu'))
     epoch = loaded_pth['epoch']
 
     model.load_state_dict(loaded_pth['model'])

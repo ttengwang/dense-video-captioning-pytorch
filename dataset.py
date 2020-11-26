@@ -188,6 +188,7 @@ class EDVCdataset(Dataset):
         feature_length = np.array(feature_length)
         featstamps = feature_length * timestamps / duration
         featstamps = np.minimum(featstamps, feature_length - 1).astype('int')
+        featstamps = np.maximum(featstamps, 0).astype('int')
         return featstamps.tolist()
 
     def __getitem__(self, idx):
