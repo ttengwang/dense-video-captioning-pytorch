@@ -1,9 +1,12 @@
 # Dense Video Captioning
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/dense-captioning-events-in-videos-sysu/dense-video-captioning-on-activitynet)](https://paperswithcode.com/sota/dense-video-captioning-on-activitynet?p=dense-captioning-events-in-videos-sysu)
+
 Code for SYSU submission to [ActivityNet Challenge 2020](http://activity-net.org/challenges/2020/index.html) (Task2: Dense Video Captioning). Our approach follows a two-stage pipeline: first, we extract a set of temporal event proposals;
 then we propose a multi-event captioning model to capture the event-level temporal relationships and effectively fuse
 the multi-modal information. 
 
 We won the 2nd place and the technical paper is available at [arxiv](https://arxiv.org/abs/2006.11693v2).
+
 
 
 # Environment
@@ -67,6 +70,10 @@ We also provide the config files of some **baseline models**. Please see this fo
 # Pre-trained model
 
 We provide a pre-trained model from [here](https://drive.google.com/drive/folders/1EqQCzjfJSOyKVq_Rzoi0xAcHLJhVlVht?usp=sharing). You can directly download `model-best-RL.pth` and `info.json` and place them into `./save/tsrm_cmg_hrnn_RL_enlarged_trainset`, then run the above code for fast evaluation. On the [small validation set (1000 videos)](data/captiondata/expand_trainset/val_1.json), this model achieves a 14.51/10.14 METEOR with ground-truth/learnt proposals.
+
+# Related project
+
+[PDVC (ICCV 2021)](https://github.com/ttengwang/PDVC): A simple yet effective dense video captioning method, which integrates the proposal generation and captioning generation into a parallel decoding manner. 
 
 # Citation
 If you find this repo helpful to your research, please consider citing:
